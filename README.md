@@ -9,7 +9,7 @@ An OpenCV/Qt based realtime application to magnify motion and color in videos an
 This application is licensed under GPLv3, read the [LICENSE](LICENSE).
 
 ## Credits
-Thanks to Nick D'Ademo, whose [qt-opencv-multithreaded](https://code.google.com/p/qt-opencv-multithreaded/) application 
+Thanks to Nick D'Ademo, whose [qt-opencv-multithreaded](https://github.com/nickdademo/qt-opencv-multithreaded) application 
 served as basis and Joseph Pans [QtEVM](https://github.com/wzpan/QtEVM) application whose algorithms were adapted
 for this project.
 
