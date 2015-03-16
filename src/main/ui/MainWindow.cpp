@@ -111,7 +111,7 @@ void MainWindow::connectToCamera()
                 }
                 // Could not connect to camera
                 else
-                {
+                {
                     // Display error message
                     QMessageBox::warning(this,tr("ERROR:"),tr("Could not connect to camera. Please check device number."));
                     // Explicitly delete widget
@@ -241,7 +241,7 @@ void MainWindow::showAboutDialog()
           "<p>The provided code is licensed under GPLv3 and hosted at "<<
           "<a href='https://github.com/tschnz/Realtime-Video-Magnification'>GitHub</a>.</p>"<<
           "<p>This application is based on the work of <a href='https://github.com/wzpan/QtEVM'>Joseph Pan</a> and "<<
-          "<a href='https://code.google.com/p/qt-opencv-multithreaded/'>Nick D&#39;Ademo</a>.</p>"<<
+          "<a href='https://github.com/nickdademo/qt-opencv-multithreaded'>Nick D&#39;Ademo</a>.</p>"<<
           "<p>The underlying algorithm is part of a research project originated at the MIT, called "<<
           "<a href='http://people.csail.mit.edu/mrub/vidmag/'>Eulerian Video Magnification</a></p>";
 
