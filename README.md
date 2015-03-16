@@ -1,6 +1,21 @@
 # Realtime-Video-Magnification
 An OpenCV/Qt based realtime application to magnify motion and color in videos and camerastreams
 
+## Dependencies
+- [Qt](http://qt-project.org/) >= 5.0
+- [OpenCV](http://opencv.org/) >= 2.0 (< 3.0 ? -> not tested yet)
+
+## License
+This application is licensed under GPLv3, read the [LICENSE](LICENSE).
+
+## Credits
+Thanks to Nick D'Ademo, whose [qt-opencv-multithreaded](https://code.google.com/p/qt-opencv-multithreaded/) application 
+served as basis and Joseph Pans [QtEVM](https://github.com/wzpan/QtEVM) application whose algorithms were adapted
+for this project.
+
+Also take a look at the MITs webpage for [Eulerian Video Magnification](http://people.csail.mit.edu/mrub/vidmag/). 
+They also provide demo videos on their page and the team did a fantastic job in researching and developing this field of science.
+
 ## How do I use it?
 ### Connect
 - Camera
@@ -16,6 +31,12 @@ An OpenCV/Qt based realtime application to magnify motion and color in videos an
 
 ### Magnify
 Try experimenting with different option values. Furthermore tooltips are provided when hovering the cursor above a text label in the options tab. If you're using an older machine and processing is too slow, try enabling the Grayscale checkbox.
+
+|                        |  Low *Level* value |  High *Level* value|
+| :---------------------- | :-----------------: | :---------------: |
+|**Color Magnification** | Slower and more accurate. Too low = no signal detection |  Faster magnification, inaccurate spatial resolution|
+|**Motion Magnification**| More noise, less movements by big objects  |   Less noise, less movements by little objects |
+
 #### Color Magnification
 Note that in the scene, absolutely NO MOVEMENTS are required to process the video correctly.
 - Amplification: The higher the value, the more colorful and noisy the output.
@@ -36,23 +57,8 @@ For saving videos or recording from camera you have to specify the file extensio
 
 ![MainWindow with saving codec menu](pictures/mainWindow_Codecs.png)
 
-## Dependencies
-- [Qt](http://qt-project.org/) >= 5.0
-- [OpenCV](http://opencv.org/) >= 2.0 (< 3.0 ? -> not tested yet)
-
-## License
-This application is licensed under GPLv3, read the [LICENSE](LICENSE).
-
-## Credits
-Thanks to Nick D'Ademo, whose [qt-opencv-multithreaded](https://code.google.com/p/qt-opencv-multithreaded/) application 
-served as basis and Joseph Pans [QtEVM](https://github.com/wzpan/QtEVM) application whose algorithms were adapted
-for this project.
-
-Also take a look at the MITs webpage for [Eulerian Video Magnification](http://people.csail.mit.edu/mrub/vidmag/). 
-They also provide demo videos on their page and the team did a fantastic job in researching and developing this field of science.
-
 ## How does it work?
-The image below provides you the class structure an the dataflow throughout the application.
+The image below provides you the class structure and the dataflow (blue = images, red = options) throughout the application.
 
 ![Class structure](pictures/klassenstruktur.png)
 
