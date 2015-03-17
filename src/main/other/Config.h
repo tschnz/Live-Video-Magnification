@@ -4,7 +4,7 @@
 /*                                                                                  */
 /* Based on the work of                                                             */
 /*      Joseph Pan      <https://github.com/wzpan/QtEVM>                            */
-/*      Nick D'Ademo    <https://code.google.com/p/qt-opencv-multithreaded/>        */
+/*      Nick D'Ademo    <https://github.com/nickdademo/qt-opencv-multithreaded>     */
 /*                                                                                  */
 /* Realtime-Video-Magnification->Config.h 		                                    */
 /*                                                                                  */

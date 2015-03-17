@@ -4,7 +4,7 @@
 /*                                                                                  */
 /* Based on the work of                                                             */
 /*      Joseph Pan      <https://github.com/wzpan/QtEVM>                            */
-/*      Nick D'Ademo    <https://code.google.com/p/qt-opencv-multithreaded/>        */
+/*      Nick D'Ademo    <https://github.com/nickdademo/qt-opencv-multithreaded>     */
 /*                                                                                  */
 /* Realtime-Video-Magnification->MainWindow.cpp                                     */
 /*                                                                                  */
@@ -21,6 +21,7 @@
 /* You should have received a copy of the GNU General Public License                */
 /* along with this program.  If not, see <http://www.gnu.org/licenses/>.            */
 /************************************************************************************/
+
 
 #include "main/ui/MainWindow.h"
 #include "ui_MainWindow.h"
@@ -111,7 +112,7 @@ void MainWindow::connectToCamera()
                 }
                 // Could not connect to camera
                 else
-                {
+                {
                     // Display error message
                     QMessageBox::warning(this,tr("ERROR:"),tr("Could not connect to camera. Please check device number."));
                     // Explicitly delete widget
