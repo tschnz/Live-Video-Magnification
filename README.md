@@ -4,7 +4,7 @@ An OpenCV/Qt based realtime application to magnify motion and color in videos an
 ## Examples
 ![Color Magnified Video](pictures/j_color-vid.png)
 
-*Image shows the color magnified output for a video*
+*Image shows the color magnified output for a video. In the pictures you can see the effects of the cardiac cycle on the skins color. The upper image shows the skin of the face during a diastole, the lower one during a ventricular systole of the cycle.*
 
 
 
