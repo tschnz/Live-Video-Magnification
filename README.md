@@ -21,11 +21,11 @@ This application is licensed under GPLv3, read the [LICENSE](LICENSE).
 
 ### Credits
 Thanks to Nick D'Ademo whose [qt-opencv-multithreaded](https://github.com/nickdademo/qt-opencv-multithreaded) application 
-served as basis and to Joseph Pans whose algorithms in the [QtEVM](https://github.com/wzpan/QtEVM) application were adapted
+served as basis and to Joseph Pan whose algorithms in the [QtEVM](https://github.com/wzpan/QtEVM) application were adapted
 for this project.
 
 Also take a look at the MITs webpage for [Eulerian Video Magnification](http://people.csail.mit.edu/mrub/vidmag/). 
-They also provide demo videos on their page and the team did a fantastic job in researching and developing this field of science.
+They provide demo videos on their page and the team did a fantastic job in researching and developing this field of science.
 
 # How do I use it?
 ### Connect
@@ -76,7 +76,7 @@ For saving videos or recording from camera you have to specify the file extensio
 # How does it work?
 The image below provides you the class structure and the dataflow (blue = images, red = options) throughout the application.
 
-![Class structure](pictures/klassenstruktur.png)
+![Class structure](pictures/class_structure.png)
 
 
 ### Algorithm
@@ -87,11 +87,11 @@ and adding the motion image back to the original.
 ![Idea of the Video Magnification Algorithm](pictures/magnification.png)
 
 #### Color Magnification
-For further informations look at the comments the .h/.cpp files in /main/magnification/*
+For further informations look at the comments in the .h/.cpp files in /main/magnification/*
 
 ![Color Magnification UML](pictures/colorMag.png)
 
 #### Motion Magnification
-For further informations look at the comments the .h/.cpp files in /main/magnification/*
+For further informations look at the comments in the .h/.cpp files in /main/magnification/*
 
 ![Laplace Magnification UML](pictures/motionMag.png)
