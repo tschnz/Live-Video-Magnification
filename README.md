@@ -1,22 +1,33 @@
 # Realtime-Video-Magnification
 An OpenCV/Qt based realtime application to magnify motion and color in videos and camerastreams
 
-## Dependencies
+## Examples
+![Color Magnified Video](pictures/j_color-vid.png)
+
+*Image shows the color magnified output for a video*
+
+
+
+![Motion Magnified Camerastream](pictures/j_motion-cam.png)
+
+*(Un-)Wanted artifacts from a realtime motion magnified camerastream. The strong b/w areas around torso and head are resulting from a fast backwards movement and excessive amplification. The white points (the ones bigger than the noise) on the left side are awhirled dust particles, not visible in the original camera source.*
+
+### Dependencies
 - [Qt](http://qt-project.org/) >= 5.0
 - [OpenCV](http://opencv.org/) >= 2.0 (< 3.0 ? -> not tested yet)
 
-## License
+### License
 This application is licensed under GPLv3, read the [LICENSE](LICENSE).
 
-## Credits
-Thanks to Nick D'Ademo, whose [qt-opencv-multithreaded](https://github.com/nickdademo/qt-opencv-multithreaded) application 
-served as basis and Joseph Pans [QtEVM](https://github.com/wzpan/QtEVM) application whose algorithms were adapted
+### Credits
+Thanks to Nick D'Ademo whose [qt-opencv-multithreaded](https://github.com/nickdademo/qt-opencv-multithreaded) application 
+served as basis and to Joseph Pans whose algorithms in the [QtEVM](https://github.com/wzpan/QtEVM) application were adapted
 for this project.
 
 Also take a look at the MITs webpage for [Eulerian Video Magnification](http://people.csail.mit.edu/mrub/vidmag/). 
 They also provide demo videos on their page and the team did a fantastic job in researching and developing this field of science.
 
-## How do I use it?
+# How do I use it?
 ### Connect
 - Camera
     - Device Number: Type in the device number of your camera connected to your computer. Indexing starts with 0 which is usually your built-in webcam.
@@ -28,6 +39,11 @@ They also provide demo videos on their page and the team did a fantastic job in 
 - Frames per Second: Some cameras support multiple modes with different resolution/fps/etc. . Setting the framerate will change into a mode with a framerate near the one you typed in. For videos, some mp4-files have a bad header where OpenCV can't read out the framerate, which will normally be set to 30FPS. Anyway here you can set it manually.
 
 ![Connect Dialog](pictures/connect_dialog.png)
+
+### Main Window
+When succesfully connected to a camera or opened a window, you can draw a box in the video, to scale and only amplify this Region Of Interest in a video source. Setting the video back to normal can be done via menu that opens with a right click in the video. There is also the option to show the unmagnified image besides the processed one.
+
+![Right-click Menu in Frame Label](pictures/frameLabel_menu.png)
 
 ### Magnify
 Try experimenting with different option values. Furthermore tooltips are provided when hovering the cursor above a text label in the options tab. If you're using an older machine and processing is too slow, try enabling the Grayscale checkbox.
@@ -57,7 +73,7 @@ For saving videos or recording from camera you have to specify the file extensio
 
 ![MainWindow with saving codec menu](pictures/mainWindow_Codecs.png)
 
-## How does it work?
+# How does it work?
 The image below provides you the class structure and the dataflow (blue = images, red = options) throughout the application.
 
 ![Class structure](pictures/klassenstruktur.png)
