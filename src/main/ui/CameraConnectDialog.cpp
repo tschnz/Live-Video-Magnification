@@ -268,7 +268,7 @@ void CameraConnectDialog::openButton_clicked()
     QString fileName = QFileDialog::getOpenFileName(this,
                                                     tr("Open Video"),
                                                     ".",
-                                                    tr("Video Files (*.avi *.wmv *.mov *.mpeg *.m4v *.mp4 *.mkv)"));
+                                                    tr("Video Files (*.avi *.wmv *.mov *.mpeg *.m4v *.mp4 *.mkv .*mts .*mpg *.AVI *.WMV *.MOV *.MPEG *.M4V *.MP4 *.MKV .*MTS .*MPG)"));
 
     if(!fileName.isEmpty()) {
         ui->fileSourceEdit->setText(fileName);
