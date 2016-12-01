@@ -76,7 +76,7 @@ void idealFilter(const Mat &src, Mat &dst , double cutoffLo, double cutoffHi, do
         cutoffLo += 0.01;
 
     int channelNrs = src.channels();
-    Mat channels[channelNrs];
+    Mat *channels = new Mat[channelNrs];
     split(src, channels);
 
     // Apply filter on each channel individually
@@ -110,6 +110,7 @@ void idealFilter(const Mat &src, Mat &dst , double cutoffLo, double cutoffHi, do
     merge(channels, channelNrs, dst);
 
     normalize(dst, dst, 0, 1, CV_MINMAX);
+    delete [] channels;
 }
 
 void createIdealBandpassFilter(Mat &filter, double cutoffLo, double cutoffHi, double framerate)
