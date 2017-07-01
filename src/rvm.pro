@@ -1,8 +1,26 @@
 QT += core gui
 
-QT_CONFIG -= no-pkg-config
-CONFIG += link_pkgconfig
-PKGCONFIG += opencv
+linux {
+    QT_CONFIG -= no-pkg-config
+    CONFIG += link_pkgconfig
+    PKGCONFIG += opencv
+}
+
+win32 {
+    OPENCVFOLDER = D:/_CODE_/_EXTERNAL_/OpenCV/my_git_build/
+    OPENCVVERSION = 310
+    INCLUDEPATH += $${OPENCVFOLDER}/x64/install/include
+
+    CONFIG(release, debug|release) {
+        LIBS += -L$${OPENCVFOLDER}/x64/lib/Release
+        LIBS += -lopencv_world$${OPENCVVERSION}
+    }
+    CONFIG(debug, debug|release) {
+        DEFINES += DEBUG_MODE
+        LIBS += -L$${OPENCVFOLDER}/x64/lib/Debug
+        LIBS += -lopencv_world$${OPENCVVERSION}d
+    }
+}
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 

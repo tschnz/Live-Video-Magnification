@@ -315,7 +315,7 @@ void Magnificator::waveletMagnify() {
 
         // Convert input image to 32bit float
         pChannels = input.channels();
-        Mat inputChannels[pChannels];
+        Mat* inputChannels = new Mat[pChannels];
         if(!(imgProcFlags->grayscaleOn || pChannels <= 2)) {
             input.convertTo(input, CV_32FC3, 1.0/255.0f);
             // Convert color images to YCrCb
@@ -395,6 +395,8 @@ void Magnificator::waveletMagnify() {
         // Fill internal buffer with magnified image
         magnifiedBuffer.push_back(output);
         ++currentFrame;
+
+        delete [] inputChannels;
     }
 }
 ////////////////////////
