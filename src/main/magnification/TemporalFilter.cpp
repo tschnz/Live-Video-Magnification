@@ -109,7 +109,7 @@ void idealFilter(const Mat &src, Mat &dst , double cutoffLo, double cutoffHi, do
     }
     merge(channels, channelNrs, dst);
 
-    normalize(dst, dst, 0, 1, CV_MINMAX);
+    normalize(dst, dst, 0, 1, cv::NORM_MINMAX);
     delete [] channels;
 }
 

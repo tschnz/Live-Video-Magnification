@@ -55,7 +55,6 @@ VideoView::VideoView(QWidget *parent, QString filepath) :
     // Initialize ImageProcessingFlags structure
     imageProcessingFlags.grayscaleOn=false;
     imageProcessingFlags.laplaceMagnifyOn = false;
-    imageProcessingFlags.waveletMagnifyOn = false;
     imageProcessingFlags.colorMagnifyOn = false;
 
     // Connect signals/slots
@@ -537,10 +536,6 @@ void VideoView::save_action()
 
             // Stop  player Thread to set memory free
             stop();
-            // Lock controls
-//            ui->PlayButton->setEnabled(false);
-//            ui->StopButton->setEnabled(false);
-//            ui->TimeSlider->setEnabled(false);
             // start saving the video
             vidSaver->start();
         }
@@ -558,10 +553,6 @@ void VideoView::endOfSaving_action()
     ui->saveProgressBar->setValue(0);
     ui->saveProgressBar->hide();
 
-    // Unlock Controls
-//    ui->PlayButton->setEnabled(true);
-//    ui->StopButton->setEnabled(true);
-//    ui->TimeSlider->setEnabled(true);
 
 }
 

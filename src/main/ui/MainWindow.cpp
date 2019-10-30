@@ -424,25 +424,25 @@ void MainWindow::setCodec(QAction *action)
         action->setChecked(true);
 
         if(name == "DivX")
-            codec = CV_FOURCC('D','I','V','X');
+            codec = VideoWriter::fourcc('D','I','V','X');
         else if(name == "FFV1 (FFMPEG Codec)")
-            codec = CV_FOURCC('F','F','V','1');
+            codec = VideoWriter::fourcc('F','F','V','1');
         else if(name == "HDYC (Raw YUV 4:2:2)")
-            codec = CV_FOURCC('H','D','Y','C');
+            codec = VideoWriter::fourcc('H','D','Y','C');
         else if(name == "HEVC (H.265)")
-            codec = CV_FOURCC('H','E','V','C');
+            codec = VideoWriter::fourcc('H','E','V','C');
         else if(name == "M4S2 (MPEG-4 v2)")
-            codec = CV_FOURCC('M','4','S','2');
+            codec = VideoWriter::fourcc('M','4','S','2');
         else if(name == "MJPG (Motion JPEG)")
-            codec = CV_FOURCC('M','J','P','G');
+            codec = VideoWriter::fourcc('M','J','P','G');
         else if(name == "MP2V (MPEG-2)")
-            codec = CV_FOURCC('M','P','2','V');
+            codec = VideoWriter::fourcc('M','P','2','V');
         else if(name == "MP4V (MPEG-4)")
-            codec = CV_FOURCC('M','P','4','V');
+            codec = VideoWriter::fourcc('M','P','4','V');
         else if(name == "MPEG (MPEG-1?)")
-            codec = CV_FOURCC('M','P','E','G');
+            codec = VideoWriter::fourcc('M','P','E','G');
         else if(name == "PIM1 (MPEG-1)")
-            codec = CV_FOURCC('P','I','M','1');
+            codec = VideoWriter::fourcc('P','I','M','1');
         else
             codec = -1;
 

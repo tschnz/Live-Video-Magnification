@@ -31,8 +31,8 @@
 #include <QWaitCondition>
 #include <QMutex>
 // OpenCV
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
 // Local
 #include <main/other/Buffer.h>
 

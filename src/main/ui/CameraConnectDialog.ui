@@ -106,19 +106,6 @@
            </property>
           </widget>
          </item>
-         <item>
-          <widget class="QCheckBox" name="pgDevCheckBox">
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="whatsThis">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;PointGrey and other dc1394 devices are set to device number 0, overriding your built-in webcam. This sets PointGrey to 1.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-           </property>
-           <property name="text">
-            <string>PointGrey Device on USB</string>
-           </property>
-          </widget>
-         </item>
         </layout>
        </item>
        <item>

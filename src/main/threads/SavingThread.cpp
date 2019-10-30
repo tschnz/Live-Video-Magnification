@@ -78,7 +78,7 @@ void SavingThread::run()
 
                     // Do the PREPROCESSING
                     if(imgProcFlags.grayscaleOn && (currentFrame.channels() == 3 || currentFrame.channels() == 4)) {
-                        cvtColor(currentFrame, currentFrame, CV_BGR2GRAY, 1);
+                        cvtColor(currentFrame, currentFrame, cv::COLOR_BGR2GRAY, 1);
                     }
 
                     // Fill Buffer
@@ -106,10 +106,6 @@ void SavingThread::run()
         }
         else if(imgProcFlags.laplaceMagnifyOn) {
             magnificator.laplaceMagnify();
-            processedFrame = magnificator.getFrameFirst();
-        }
-        else if(imgProcFlags.waveletMagnifyOn) {
-            magnificator.waveletMagnify();
             processedFrame = magnificator.getFrameFirst();
         }
         else {
@@ -156,7 +152,7 @@ void SavingThread::resetSaver()
     magnificator.clearBuffer();
     currentWriteIndex = 0;
     releaseFile();
-    cap.set(CV_CAP_PROP_POS_FRAMES,0);
+    cap.set(cv::CAP_PROP_POS_FRAMES,0);
     doStop = true;
 }
 
@@ -172,7 +168,7 @@ void SavingThread::stop()
 bool SavingThread::loadFile(std::string source)
 {
     if(cap.open(source)) {
-        videoLength = cap.get(CV_CAP_PROP_FRAME_COUNT);
+        videoLength = cap.get(cv::CAP_PROP_FRAME_COUNT);
         return true;
     }
     else
@@ -193,9 +189,6 @@ bool SavingThread::saveFile(std::string destination, double framerate, QRect dim
         processingBufferLength = magnificator.getOptimalBufferSize(framerate);
     }
     else if(imgProcFlags.laplaceMagnifyOn) {
-        processingBufferLength = 2;
-    }
-    else if(imgProcFlags.waveletMagnifyOn) {
         processingBufferLength = 2;
     }
     else
@@ -230,7 +223,7 @@ void SavingThread::releaseFile()
 // Return the current Position of cap
 int SavingThread::getCurrentCaptureIndex()
 {
-    return cap.get(CV_CAP_PROP_POS_FRAMES);
+    return cap.get(cv::CAP_PROP_POS_FRAMES);
 }
 
 bool SavingThread::processingBufferFilled()
@@ -274,7 +267,7 @@ int SavingThread::getVideoCodec()
 {
     int codec = 0;
     if(cap.isOpened())
-        codec = cap.get(CV_CAP_PROP_FOURCC);
+        codec = cap.get(cv::CAP_PROP_FOURCC);
 
     return codec;
 }

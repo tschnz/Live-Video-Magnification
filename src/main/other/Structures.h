@@ -57,13 +57,11 @@ struct ImageProcessingFlags{
     bool grayscaleOn;
     bool colorMagnifyOn;
     bool laplaceMagnifyOn;
-    bool waveletMagnifyOn;
 
     ImageProcessingFlags() :
         grayscaleOn(false),
         colorMagnifyOn(false),
-        laplaceMagnifyOn(false),
-        waveletMagnifyOn(false)
+        laplaceMagnifyOn(false)
     {
     }
 };

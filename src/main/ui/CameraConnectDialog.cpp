@@ -73,21 +73,18 @@ CameraConnectDialog::~CameraConnectDialog()
 
 int CameraConnectDialog::getDeviceNumber()
 {
-    // If theres a PointGrey device, OCV recognizes it as deviceNumber 0, caused by libdc1394, if you still want to
-    // access the (internal) webcam (usually device 0) you have to get it through devicenumber -1
-    bool withPgDevice = getPgDevCheckBoxState();
     int deviceNumber;
 
     // Set device number to default (any available camera) if field is blank
     if(ui->deviceNumberEdit->text().isEmpty())
     {
         QMessageBox::warning(this->parentWidget(), tr("WARNING:"),tr("Device Number field blank.\nAutomatically set to 0."));
-        return (withPgDevice ? -1 : 0);
+        deviceNumber = 0;
     }
     else
         deviceNumber = ui->deviceNumberEdit->text().toInt();
 
-    return (withPgDevice ? (deviceNumber-1) : (deviceNumber));
+    return deviceNumber;
 }
 
 int CameraConnectDialog::countCameraDevices()
@@ -155,11 +152,6 @@ bool CameraConnectDialog::getDropFrameCheckBoxState()
     return ui->dropFrameCheckBox->isChecked();
 }
 
-bool CameraConnectDialog::getPgDevCheckBoxState()
-{
-    return ui->pgDevCheckBox->isChecked();
-}
-
 int CameraConnectDialog::getCaptureThreadPrio()
 {
     return ui->capturePrioComboBox->currentIndex();
@@ -182,8 +174,6 @@ QString CameraConnectDialog::getTabLabel()
 
 void CameraConnectDialog::resetToDefaults()
 {
-    // PointGrey Device
-    ui->pgDevCheckBox->setChecked(DEFAULT_PG_DEVICE);
     // Default camera
     ui->deviceNumberEdit->clear();
     // Resolution

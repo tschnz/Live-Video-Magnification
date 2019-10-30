@@ -107,7 +107,7 @@ void ProcessingThread::run()
 
         // Grayscale conversion (in-place operation)
        if(imgProcFlags.grayscaleOn && (currentFrame.channels() == 3 || currentFrame.channels() == 4)) {
-           cvtColor(currentFrame, currentFrame, CV_BGR2GRAY, 1);
+           cvtColor(currentFrame, currentFrame, cv::COLOR_BGR2GRAY, 1);
        }
 
        // Save the original Frame after grayscale conversion, so VideoWriter works correct
@@ -127,11 +127,6 @@ void ProcessingThread::run()
 
            {
                magnificator.laplaceMagnify();
-               currentFrame = magnificator.getFrameLast();
-           }
-           else if(imgProcFlags.waveletMagnifyOn)
-           {
-               magnificator.waveletMagnify();
                currentFrame = magnificator.getFrameLast();
            }
            else
@@ -251,7 +246,6 @@ void ProcessingThread::updateImageProcessingFlags(struct ImageProcessingFlags im
     this->imgProcFlags.grayscaleOn = imageProcessingFlags.grayscaleOn;
     this->imgProcFlags.colorMagnifyOn = imageProcessingFlags.colorMagnifyOn;
     this->imgProcFlags.laplaceMagnifyOn = imageProcessingFlags.laplaceMagnifyOn;
-    this->imgProcFlags.waveletMagnifyOn = imageProcessingFlags.waveletMagnifyOn;
     processingBuffer.clear();
     magnificator.clearBuffer();
 }

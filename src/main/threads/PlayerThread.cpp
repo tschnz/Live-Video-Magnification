@@ -125,7 +125,7 @@ void PlayerThread::run()
                 currentFrame = Mat(grabbedFrame.clone(), currentROI);
                 // Convert to grayscale
                 if(imgProcFlags.grayscaleOn && (currentFrame.channels() == 3 || currentFrame.channels() == 4)) {
-                    cvtColor(currentFrame, currentFrame, CV_BGR2GRAY, 1);
+                    cvtColor(currentFrame, currentFrame, cv::COLOR_BGR2GRAY, 1);
                 }
 
                 // Fill fuffer
@@ -161,10 +161,6 @@ void PlayerThread::run()
         else if(imgProcFlags.laplaceMagnifyOn)
         {
             magnificator.laplaceMagnify();
-            currentFrame = magnificator.getFrameFirst();
-        }
-        else if(imgProcFlags.waveletMagnifyOn) {
-            magnificator.waveletMagnify();
             currentFrame = magnificator.getFrameFirst();
         }
         else {
@@ -242,11 +238,11 @@ bool PlayerThread::loadFile()
 
     // Set resolution
     if(width != -1)
-        cap.set(CV_CAP_PROP_FRAME_WIDTH, width);
+        cap.set(cv::CAP_PROP_FRAME_WIDTH, width);
     if(height != -1)
-        cap.set(CV_CAP_PROP_FRAME_HEIGHT, height);
+        cap.set(cv::CAP_PROP_FRAME_HEIGHT, height);
     if(fps == -1) {
-        fps = cap.get(CV_CAP_PROP_FPS);
+        fps = cap.get(cv::CAP_PROP_FPS);
     }
 
     // OpenCV can't read all mp4s properly, fps is often false
@@ -261,11 +257,11 @@ bool PlayerThread::loadFile()
     // Write information in Settings
     statsData.averageFPS = fps;
     imgProcSettings.framerate = fps;
-    imgProcSettings.frameHeight = cap.get(CV_CAP_PROP_FRAME_HEIGHT);
-    imgProcSettings.frameWidth = cap.get(CV_CAP_PROP_FRAME_WIDTH);
+    imgProcSettings.frameHeight = cap.get(cv::CAP_PROP_FRAME_HEIGHT);
+    imgProcSettings.frameWidth = cap.get(cv::CAP_PROP_FRAME_WIDTH);
 
     // Save total length of video
-    lengthInFrames = cap.get(CV_CAP_PROP_FRAME_COUNT);
+    lengthInFrames = cap.get(cv::CAP_PROP_FRAME_COUNT);
 
     return openResult;
 }
@@ -345,7 +341,6 @@ void PlayerThread::updateImageProcessingFlags(struct ImageProcessingFlags imgPro
     this->imgProcFlags.grayscaleOn = imgProcessingFlags.grayscaleOn;
     this->imgProcFlags.colorMagnifyOn = imgProcessingFlags.colorMagnifyOn;
     this->imgProcFlags.laplaceMagnifyOn = imgProcessingFlags.laplaceMagnifyOn;
-    this->imgProcFlags.waveletMagnifyOn = imgProcessingFlags.waveletMagnifyOn;
     locker1.unlock();
     locker2.unlock();
 
@@ -384,7 +379,7 @@ void PlayerThread::playAction()
             doStop = false;
             doPause = false;
             doPlay = true;
-            cap.set(CV_CAP_PROP_POS_FRAMES, getCurrentFramenumber());
+            cap.set(cv::CAP_PROP_POS_FRAMES, getCurrentFramenumber());
             start();
         }
         else if(isStopping()) {
@@ -435,7 +430,7 @@ void PlayerThread::setCurrentFrame(int framenumber)
 void PlayerThread::setCurrentTime(int ms)
 {
     if(cap.isOpened())
-        cap.set(CV_CAP_PROP_POS_MSEC, ms);
+        cap.set(cv::CAP_PROP_POS_MSEC, ms);
 }
 
 double PlayerThread::getInputFrameLength()
@@ -448,11 +443,11 @@ double PlayerThread::getInputTimeLength() {
 }
 
 double PlayerThread::getCurrentFramenumber() {
-    return cap.get(CV_CAP_PROP_POS_FRAMES);
+    return cap.get(cv::CAP_PROP_POS_FRAMES);
 }
 
 double PlayerThread::getCurrentPosition() {
-    return cap.get(CV_CAP_PROP_POS_MSEC);
+    return cap.get(cv::CAP_PROP_POS_MSEC);
 }
 
 void PlayerThread::updateFPS(int timeElapsed)
@@ -510,13 +505,10 @@ void PlayerThread::setBufferSize()
     else if(imgProcFlags.laplaceMagnifyOn) {
         processingBufferLength = 2;
     }
-    else if(imgProcFlags.waveletMagnifyOn) {
-        processingBufferLength = 2;
-    }
     else {
         processingBufferLength = 1;
     }
 
     if(cap.isOpened() || !doStop)
-        cap.set(CV_CAP_PROP_POS_FRAMES, std::max(currentWriteIndex-processingBufferLength,0));
+        cap.set(cv::CAP_PROP_POS_FRAMES, std::max(currentWriteIndex-processingBufferLength,0));
 }

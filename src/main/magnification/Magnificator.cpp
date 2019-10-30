@@ -225,7 +225,7 @@ void Magnificator::laplaceMagnify() {
             // Convert color images to YCrCb
             //BGR2YCbCr(input, input);
             input.convertTo(input, CV_32FC3, 1.0/255.0f);
-            cvtColor(input, input, CV_BGR2YCrCb);
+            cvtColor(input, input, cv::COLOR_BGR2YCrCb);
         }
         else
             input.convertTo(input, CV_32FC1, 1.0/255.0f);
@@ -279,7 +279,7 @@ void Magnificator::laplaceMagnify() {
         // Scale output image an convert back to 8bit unsigned
         if(!(imgProcFlags->grayscaleOn || pChannels <= 2)) {
             // Convert YCrCb image back to BGR
-            cvtColor(output, output, CV_YCrCb2BGR);
+            cvtColor(output, output, cv::COLOR_YCrCb2BGR);
             output.convertTo(output, CV_8UC3, 255.0, 1.0/255.0);
             //YCbCr2BGR(output, output);
         }
@@ -292,113 +292,6 @@ void Magnificator::laplaceMagnify() {
     }
 }
 
-void Magnificator::waveletMagnify() {
-    int pBufferElements = processingBuffer->size();
-    // Magnify only when processing buffer holds new images
-    if(currentFrame >= pBufferElements)
-        return;
-    // Number of levels in pyramid
-//    this->levels = DEFAULT_DWT_MAG_LEVELS;
-    levels = imgProcSettings->levels;
-
-    Mat input, output, motion;
-    vector< vector<Mat> > inputPyramid;
-    int pChannels;
-
-    // Process every frame in buffer that wasn't magnified yet
-    while(currentFrame < pBufferElements) {
-        // Grab oldest frame from processingBuffer and delete it to save memory
-        input = processingBuffer->front().clone();
-
-        if(currentFrame > 0)
-            processingBuffer->erase(processingBuffer->begin());
-
-        // Convert input image to 32bit float
-        pChannels = input.channels();
-        Mat* inputChannels = new Mat[pChannels];
-        if(!(imgProcFlags->grayscaleOn || pChannels <= 2)) {
-            input.convertTo(input, CV_32FC3, 1.0/255.0f);
-            // Convert color images to YCrCb
-            cvtColor(input, input, CV_BGR2YCrCb);
-        }
-        else
-            input.convertTo(input, CV_32FC1, 1.0/255.0f);
-
-        // Split input image and only magnify L-channel
-        split(input, inputChannels);
-
-        /* !. SPATIAL FILTER, BUILD DWT */
-        buildWaveletPyrFromImg(inputChannels[0].clone(), levels, inputPyramid);
-
-        // If first frame ever, save unfiltered pyramid
-        if(currentFrame == 0) {
-            wlLowpassHi = inputPyramid;
-            wlLowpassLo = inputPyramid;
-            wlMotionPyramid = inputPyramid;
-        } else {
-            /* 2. TEMPORAL FILTER EVERY LEVEL OF LAPLACE PYRAMID */
-            for (int curLevel = 0; curLevel < levels; ++curLevel) {
-                iirWaveletFilter(inputPyramid.at(curLevel), wlMotionPyramid.at(curLevel), wlLowpassHi.at(curLevel), wlLowpassLo.at(curLevel),
-                          imgProcSettings->coLow, imgProcSettings->coHigh);
-            }
-
-            int w = input.size().width;
-            int h = input.size().height;
-
-            // Amplification variable
-            delta = imgProcSettings->coWavelength / (8.0 * (1.0 + imgProcSettings->amplification));
-
-            // Amplification Booster for better visualization
-            exaggeration_factor = DEFAULT_DWT_MAG_EXAGGERATION;
-
-            // compute representative wavelength, lambda
-            // reduces for every pyramid level
-            lambda = sqrt(w*w + h*h)/3.0;
-
-            /* 3. AMPLIFY EVERY LEVEL OF DWT */
-            for (int curLevel = levels-1; curLevel >= 0; --curLevel) {
-                amplifyWavelet(wlMotionPyramid.at(curLevel), wlMotionPyramid.at(curLevel), curLevel);
-                lambda /= 2.0;
-            }
-        }
-
-        /* 4. RECONSTRUCT MOTION IMAGE FROM PYRAMID */
-        // While reconstructing
-        buildImgFromWaveletPyr(wlMotionPyramid, motion, input.size());
-        // Blur get softer motions
-        GaussianBlur(motion, motion, Size(0,0), 1.25);
-
-        // Merge array of motions back into one image
-        for(int chn = 0; chn < pChannels; ++chn) {
-            inputChannels[chn] = motion;
-        }
-        merge(inputChannels, pChannels, motion);
-
-        /* 5. ATTENUATE (if not grayscale) */
-        attenuate(motion, motion);
-
-        /* 6. ADD MOTION TO ORIGINAL IMAGE */
-        if(currentFrame > 0)
-            output = input+motion;
-        else
-            output = input;
-
-        // Scale output image an convert back to 8bit unsigned
-        if(!(imgProcFlags->grayscaleOn || pChannels <= 2)) {
-            // Convert YCrCb image back to BGR
-            cvtColor(output, output, CV_YCrCb2BGR);
-            output.convertTo(output, CV_8UC3, 255.0, 1.0/255.0);
-        }
-        else
-            output.convertTo(output, CV_8UC1, 255.0, 1.0/255.0);
-
-        // Fill internal buffer with magnified image
-        magnifiedBuffer.push_back(output);
-        ++currentFrame;
-
-        delete [] inputChannels;
-    }
-}
 ////////////////////////
 ///Magnified Buffer ////
 ////////////////////////

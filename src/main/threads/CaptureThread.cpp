@@ -90,12 +90,12 @@ bool CaptureThread::connectToCamera()
     bool camOpenResult = cap.open(deviceNumber);
     // Set resolution
     if(width != -1)
-        cap.set(CV_CAP_PROP_FRAME_WIDTH, width);
+        cap.set(cv::CAP_PROP_FRAME_WIDTH, width);
     if(height != -1)
-        cap.set(CV_CAP_PROP_FRAME_HEIGHT, height);
+        cap.set(cv::CAP_PROP_FRAME_HEIGHT, height);
     // Set maximum frames per second
     if(fpsGoal != -1)
-        cap.set(CV_CAP_PROP_FPS, fpsGoal);
+        cap.set(cv::CAP_PROP_FPS, fpsGoal);
     // Return result
     return camOpenResult;
 }
@@ -159,10 +159,10 @@ bool CaptureThread::isCameraConnected()
 
 int CaptureThread::getInputSourceWidth()
 {
-    return cap.get(CV_CAP_PROP_FRAME_WIDTH);
+    return cap.get(cv::CAP_PROP_FRAME_WIDTH);
 }
 
 int CaptureThread::getInputSourceHeight()
 {
-    return cap.get(CV_CAP_PROP_FRAME_HEIGHT);
+    return cap.get(cv::CAP_PROP_FRAME_HEIGHT);
 }

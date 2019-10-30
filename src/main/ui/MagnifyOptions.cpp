@@ -147,20 +147,6 @@ void MagnifyOptions::reset()
         ui->ChromSpinBox->setValue(DEFAULT_MM_CHROMATTENUATION);
         ui->ChromSlider->setValue(DEFAULT_MM_CHROMATTENUATION);
         break;
-    case 3:
-        applyMotionInterface();
-        ui->LevelsSpinBox->setValue(DEFAULT_DWT_MAG_LEVELS);
-        ui->AmplificationSpinBox->setValue(DEFAULT_MM_AMPLIFICATION);
-        ui->AmplificationSlider->setValue(DEFAULT_MM_AMPLIFICATION);
-        ui->COWavelengthSpinBox->setValue(DEFAULT_MM_COWAVELENGTH);
-        ui->COWavelengthSlider->setValue(DEFAULT_MM_COWAVELENGTH);
-        ui->COLowDoubleSpinBox->setValue(DEFAULT_MM_COLOW);
-        doubleSlider->setLowerValue((int)(DEFAULT_MM_COLOW));
-        ui->COHighDoubleSpinBox->setValue(DEFAULT_MM_COHIGH);
-        doubleSlider->setUpperValue((int)(DEFAULT_MM_COHIGH));
-        ui->ChromSpinBox->setValue(DEFAULT_MM_CHROMATTENUATION);
-        ui->ChromSlider->setValue(DEFAULT_MM_CHROMATTENUATION);
-        break;
     default:  
         ui->LevelsSpinBox->setDisabled(true);
         ui->verticalSpacer->changeSize(0,0,QSizePolicy::Maximum, QSizePolicy::Maximum);
@@ -210,7 +196,6 @@ void MagnifyOptions::updateFlagsFromOptionsTab()
     // What Magnification Type was chosen?
     imgProcFlags.colorMagnifyOn = (ui->MagnifcationtypeComboBox->currentIndex() == 1);
     imgProcFlags.laplaceMagnifyOn = (ui->MagnifcationtypeComboBox->currentIndex() == 2);
-    imgProcFlags.waveletMagnifyOn = (ui->MagnifcationtypeComboBox->currentIndex() == 3);
 
     emit newImageProcessingFlags(imgProcFlags);
 }
@@ -232,7 +217,7 @@ void MagnifyOptions::updateSettingsFromOptionsTab()
         ui->loBpm->setText(loBpm);
         ui->hiBpm->setText(hiBpm);
     }
-    else {
+    else if(imgProcFlags.laplaceMagnifyOn) {
         imgProcSettings.coLow = ui->COLowDoubleSpinBox->value()/100.0;
         imgProcSettings.coHigh = ui->COHighDoubleSpinBox->value()/100.0;
     }
