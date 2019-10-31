@@ -1,5 +1,5 @@
 # Live Motion Magnification
-An OpenCV/Qt based realtime application to magnify motion and color in videos and camerastreams
+An OpenCV/Qt based realtime application for Eulerian Video Magnification. Works with multiple videos and cameras at the same time and let's you export the magnified videos.
 
 ## _UPDATE (31.10.2019)_
 Added [Fast Phase Based Motion Magnification using Riesz Pyramids](https://people.csail.mit.edu/nwadhwa/riesz-pyramid/) using parts of [this repo](https://github.com/tbl3rd/Pyramids).
