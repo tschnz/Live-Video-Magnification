@@ -1,6 +1,10 @@
 # Realtime-Video-Magnification
 An OpenCV/Qt based realtime application to magnify motion and color in videos and camerastreams
 
+## _UPDATE_
+Added [Fast Phase Based Motion Magnification using Riesz Pyramids](https://people.csail.mit.edu/nwadhwa/riesz-pyramid/) using parts of [this repo](https://github.com/tbl3rd/Pyramids).
+Works for videos, not yet tested for Live Webcams.
+
 ## Examples
 ![Color Magnified Video](pictures/j_color-vid.png)
 
