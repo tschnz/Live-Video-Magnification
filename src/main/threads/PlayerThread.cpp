@@ -69,7 +69,7 @@ PlayerThread::~PlayerThread()
 void PlayerThread::run()
 {
     // The standard delay time to keep FPS playing rate without processing time
-    double delay = 1000.f/fps;
+    double delay = 1000.0/fps;
     qDebug() << "Starting player thread...";
     QTime mTime;
 
@@ -156,12 +156,26 @@ void PlayerThread::run()
         if(imgProcFlags.colorMagnifyOn)
         {
             magnificator.colorMagnify();
-            currentFrame = magnificator.getFrameFirst();
+            if(magnificator.hasFrame())
+            {
+                currentFrame = magnificator.getFrameFirst();
+            }
         }
         else if(imgProcFlags.laplaceMagnifyOn)
         {
             magnificator.laplaceMagnify();
-            currentFrame = magnificator.getFrameFirst();
+            if(magnificator.hasFrame())
+            {
+                currentFrame = magnificator.getFrameFirst();
+            }
+        }
+        else if(imgProcFlags.rieszMagnifyOn)
+        {
+            magnificator.rieszMagnify();
+            if(magnificator.hasFrame())
+            {
+                currentFrame = magnificator.getFrameFirst();
+            }
         }
         else {
             // Read frames unmagnified
@@ -319,12 +333,17 @@ int PlayerThread::getInputSourceHeight()
 
 void PlayerThread::setROI(QRect roi)
 {
-    setBufferSize();
+    QMutexLocker locker1(&doStopMutex);
+    QMutexLocker locker2(&processingMutex);
     currentROI.x = roi.x();
     currentROI.y = roi.y();
     currentROI.width = roi.width();
     currentROI.height = roi.height();
     int levels = magnificator.calculateMaxLevels(roi);
+    magnificator.clearBuffer();
+    locker1.unlock();
+    locker2.unlock();
+    setBufferSize();
     emit maxLevels(levels);
 }
 
@@ -341,6 +360,7 @@ void PlayerThread::updateImageProcessingFlags(struct ImageProcessingFlags imgPro
     this->imgProcFlags.grayscaleOn = imgProcessingFlags.grayscaleOn;
     this->imgProcFlags.colorMagnifyOn = imgProcessingFlags.colorMagnifyOn;
     this->imgProcFlags.laplaceMagnifyOn = imgProcessingFlags.laplaceMagnifyOn;
+    this->imgProcFlags.rieszMagnifyOn = imgProcessingFlags.rieszMagnifyOn;
     locker1.unlock();
     locker2.unlock();
 
@@ -503,6 +523,9 @@ void PlayerThread::setBufferSize()
         processingBufferLength = magnificator.getOptimalBufferSize(imgProcSettings.framerate);
     }
     else if(imgProcFlags.laplaceMagnifyOn) {
+        processingBufferLength = 2;
+    }
+    else if(imgProcFlags.rieszMagnifyOn) {
         processingBufferLength = 2;
     }
     else {

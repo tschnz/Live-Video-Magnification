@@ -38,9 +38,12 @@
 #include "main/magnification/TemporalFilter.h"
 #include "main/other/Structures.h"
 #include "main/other/Config.h"
+#include "main/magnification/RieszPyramid.h"
 // C++
 #include "cmath"
 #include "math.h"
+
+#define M_PI 3.14159265358979323846264338327950288
 
 using namespace cv;
 using namespace std;
@@ -68,6 +71,7 @@ public:
     Magnificator(vector<Mat> *pBuffer = 0,
                  struct ImageProcessingFlags *imageProcFlags = 0,
                  struct ImageProcessingSettings *imageProcSettings = 0);
+    ~Magnificator();
     /*!
      * \brief calculateMaxLevels Maximum levels an image pyramid can hold.
      * \return Maximum level.
@@ -76,8 +80,6 @@ public:
     int calculateMaxLevels(Size s);
     int calculateMaxLevels(QRect r);
 
-    void BGR2YCbCr(const Mat &src, Mat &dst);
-    void YCbCr2BGR(const Mat &src, Mat &dst);
     /*!
      * \brief laplaceMagnify Motion magnification. You can find detailed step by step description in .cpp
      */
@@ -89,7 +91,7 @@ public:
     /*!
      * \brief waveletMagnify Haar Wavelet magnification. You can find detailed step by step description in .cpp
      */
-    void waveletMagnify();
+    void rieszMagnify();
 
     ////////////////////////
     ///Magnified Buffer ///
@@ -119,6 +121,8 @@ public:
      * \brief clearBuffer Cleans buffer with magnified images, deletes lowpass pyramids, temporal buffer,
      */
     void clearBuffer();
+
+    bool hasFrame();
 
     //////////////////////// 
     ///Processing Buffer // 
@@ -203,26 +207,15 @@ private:
      */
     vector<Mat> lowpassLo;
     /*!
-     * \brief tempBuffer (Motion magnification) Holds image pyramid with the difference of two
-     *  filtered images from lowpassHi & lowpassLo on each level. The upsampled pyramid is a motion
-     *  image that will be added to the original image.
-     */
-    vector< vector<Mat> > wlMotionPyramid;
-    /*!
-     * \brief lowpassHi (Motion magnification) Holds image pyramid of lowpassed current frame with
-     *  high cutoff
-     */
-    vector< vector<Mat> > wlLowpassHi;
-    /*!
-     * \brief lowpassLo (Motion magnification) Holds image pyramid of lowpassed current frame with
-     *  low cutoff
-     */
-    vector< vector<Mat> > wlLowpassLo;
-    /*!
      * \brief downSampledMat (Color magnification) Holds 2*fps rounded to next power of 2
      *  downsampled and to 1 column reshaped images.
      */
     Mat downSampledMat;
+
+    std::shared_ptr<RieszPyramid> oldPyr;
+    std::shared_ptr<RieszPyramid> curPyr;
+    std::shared_ptr<RieszTemporalFilter> loCutoff;
+    std::shared_ptr<RieszTemporalFilter> hiCutoff;
 
     //////////////////////// 
     ///Postprocessing //////
@@ -240,20 +233,6 @@ private:
      * \param dst Destination image.
      */
     void attenuate(const Mat &src, Mat &dst);
-    /*!
-     * \brief denoiseWavelet Denoises a wavelet vector/pyramid.
-     * \param src Source vector.
-     * \param dst Destination vector.
-     * \param threshold Threshold for denoising.
-     */
-    void denoiseWavelet(vector< vector<Mat> > &src, vector< vector<Mat> > &dst, float threshold);
-    /*!
-     * \brief amplifyWavelet Adapted from amplify Laplacian for wavelet vector structure.
-     * \param src Source vector.
-     * \param dst Destination vector.
-     * \param currentLevel Level of image pyramid that is amplified.
-     */
-    void amplifyWavelet(const vector<Mat> &src, vector<Mat> &dst, int currentLevel);
     /*!
      * \brief amplifyGaussian (Color magnification) Amplifies a Gaussian image pyramid.
      * \param src Source image.

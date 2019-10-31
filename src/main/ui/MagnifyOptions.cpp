@@ -37,7 +37,6 @@ MagnifyOptions::MagnifyOptions(QWidget *parent) :
     ui->doubleSliderField->insertWidget(0, doubleSlider);
     //doubleSlider->setHandleMovementMode(QxtSpanSlider::NoOverlapping);
 
-
     // Connect all sliders/buttons/boxes directly for responsible feeling
     connect(ui->MagnifcationtypeComboBox, SIGNAL(currentIndexChanged(int)), SLOT(updateFlagsFromOptionsTab()));
     connect(ui->MagnifcationtypeComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(reset(int)));
@@ -75,43 +74,78 @@ MagnifyOptions::~MagnifyOptions()
     delete ui;
 }
 
+void MagnifyOptions::setFPS(double fps)
+{
+    this->imgProcSettings.framerate = fps;
+}
+
 // Internal slots supporting GUI
 void MagnifyOptions::convertFromSpinBox(double val)
-{
+{    
     if(imgProcFlags.colorMagnifyOn) {
         if(sender() == ui->COLowDoubleSpinBox)
-            doubleSlider->setLowerValue((int)(val*100.f));
+            doubleSlider->setLowerValue(static_cast<int>(val*100.0));
         if(sender() == ui->COHighDoubleSpinBox)
-            doubleSlider->setUpperValue((int)(val*100.f));
+            doubleSlider->setUpperValue(static_cast<int>(val*100.0));
+        if(sender() == ui->COWavelengthSpinBox)
+            ui->COWavelengthSlider->setValue(static_cast<int>(val*10.0));
     }
-    else {
+    else if(imgProcFlags.laplaceMagnifyOn) {
         if(sender() == ui->COLowDoubleSpinBox)
-            doubleSlider->setLowerValue((int)val);
+            doubleSlider->setLowerValue(static_cast<int>(val));
         if(sender() == ui->COHighDoubleSpinBox)
-            doubleSlider->setUpperValue((int)val);
+            doubleSlider->setUpperValue(static_cast<int>(val));
+        if(sender() == ui->COWavelengthSpinBox)
+            ui->COWavelengthSlider->setValue(static_cast<int>(val*10.0));
     }
-    if(sender() == ui->COWavelengthSpinBox)
-        ui->COWavelengthSlider->setValue((int)(val*10.0));
+    else if(imgProcFlags.rieszMagnifyOn) {
+        if(sender() == ui->COLowDoubleSpinBox)
+            doubleSlider->setLowerValue(static_cast<int>(val*100.0));
+        if(sender() == ui->COHighDoubleSpinBox)
+                doubleSlider->setUpperValue(static_cast<int>(val*100.0));
+        if(sender() == ui->COWavelengthSpinBox)
+            ui->COWavelengthSlider->setValue(static_cast<int>(val));
+    }
 }
 
 void MagnifyOptions::convertFromSlider(int val)
 {
-    if(sender() == doubleSlider) {
-        if(imgProcFlags.colorMagnifyOn) {
+    double v = static_cast<double>(val);
+    if(sender() == doubleSlider)
+    {
+        if(imgProcFlags.colorMagnifyOn)
+        {
             if(val == doubleSlider->lowerPosition())
-                ui->COLowDoubleSpinBox->setValue((double) val/100.f);
+                ui->COLowDoubleSpinBox->setValue(v/100.0);
             else if( val == doubleSlider->upperPosition())
-                ui->COHighDoubleSpinBox->setValue((double) val/100.f);
+                ui->COHighDoubleSpinBox->setValue(v/100.0);
         }
-        else {
+        else if(imgProcFlags.laplaceMagnifyOn)
+        {
             if(val == doubleSlider->lowerPosition())
-                ui->COLowDoubleSpinBox->setValue((double) val);
+                ui->COLowDoubleSpinBox->setValue(v);
             else if( val == doubleSlider->upperPosition())
-                ui->COHighDoubleSpinBox->setValue((double) val);
+                ui->COHighDoubleSpinBox->setValue(v);
+        }
+        else if(imgProcFlags.rieszMagnifyOn)
+        {
+            if(val == doubleSlider->lowerPosition())
+                ui->COLowDoubleSpinBox->setValue(v/100.0);
+            else if( val == doubleSlider->upperPosition())
+                ui->COHighDoubleSpinBox->setValue(v/100.0);
         }
     }
     if(sender() == ui->COWavelengthSlider)
-        ui->COWavelengthSpinBox->setValue((double)val/10.0);
+    {
+        if(imgProcFlags.rieszMagnifyOn)
+        {
+            ui->COWavelengthSpinBox->setValue(v);
+        }
+        else
+        {
+            ui->COWavelengthSpinBox->setValue(v/10.0);
+        }
+    }
 }
 
 // Reset everything to Default, configured in Config.h, depending on Magnify Type. On Start its 0
@@ -127,25 +161,40 @@ void MagnifyOptions::reset()
         ui->COWavelengthSpinBox->setValue(DEFAULT_CM_COWAVELENGTH);
         ui->COWavelengthSlider->setValue(DEFAULT_CM_COWAVELENGTH);
         ui->COLowDoubleSpinBox->setValue(DEFAULT_CM_COLOW);
-        doubleSlider->setLowerValue((int)(DEFAULT_CM_COLOW*100.f));
+        doubleSlider->setLowerValue(static_cast<int>(DEFAULT_CM_COLOW*100.0));
         ui->COHighDoubleSpinBox->setValue(DEFAULT_CM_COHIGH);
-        doubleSlider->setUpperValue((int)(DEFAULT_CM_COHIGH*100.f));
+        doubleSlider->setUpperValue(static_cast<int>(DEFAULT_CM_COHIGH*100.0));
         ui->ChromSpinBox->setValue(DEFAULT_CM_CHROMATTENUATION);
         ui->ChromSlider->setValue(DEFAULT_CM_CHROMATTENUATION);
+        updateSettingsFromOptionsTab();
         break;
     case 2:
-        applyMotionInterface();
+        applyLaplaceInterface();
         ui->LevelsSpinBox->setValue(DEFAULT_LAP_MAG_LEVELS);
         ui->AmplificationSpinBox->setValue(DEFAULT_MM_AMPLIFICATION);
         ui->AmplificationSlider->setValue(DEFAULT_MM_AMPLIFICATION);
         ui->COWavelengthSpinBox->setValue(DEFAULT_MM_COWAVELENGTH);
         ui->COWavelengthSlider->setValue(DEFAULT_MM_COWAVELENGTH);
         ui->COLowDoubleSpinBox->setValue(DEFAULT_MM_COLOW);
-        doubleSlider->setLowerValue((int)(DEFAULT_MM_COLOW));
+        doubleSlider->setLowerValue(static_cast<int>(DEFAULT_MM_COLOW));
         ui->COHighDoubleSpinBox->setValue(DEFAULT_MM_COHIGH);
-        doubleSlider->setUpperValue((int)(DEFAULT_MM_COHIGH));
+        doubleSlider->setUpperValue(static_cast<int>(DEFAULT_MM_COHIGH));
         ui->ChromSpinBox->setValue(DEFAULT_MM_CHROMATTENUATION);
         ui->ChromSlider->setValue(DEFAULT_MM_CHROMATTENUATION);
+        updateSettingsFromOptionsTab();
+        break;
+    case 3:
+        applyRieszInterface();
+        ui->LevelsSpinBox->setValue(this->imgProcSettings.levels);
+        ui->AmplificationSpinBox->setValue(DEFAULT_PB_AMPLIFICATION);
+        ui->AmplificationSlider->setValue(DEFAULT_PB_AMPLIFICATION);
+        ui->COWavelengthSpinBox->setValue(DEFAULT_PB_COWAVELENGTH);
+        ui->COWavelengthSlider->setValue(DEFAULT_PB_COWAVELENGTH);
+        ui->COLowDoubleSpinBox->setValue(DEFAULT_PB_COLOW);
+        doubleSlider->setLowerValue(static_cast<int>(DEFAULT_PB_COLOW*100.0));
+        ui->COHighDoubleSpinBox->setValue(DEFAULT_PB_COHIGH);
+        doubleSlider->setUpperValue(static_cast<int>(DEFAULT_PB_COHIGH*100.0));
+        updateSettingsFromOptionsTab();
         break;
     default:  
         ui->LevelsSpinBox->setDisabled(true);
@@ -196,33 +245,52 @@ void MagnifyOptions::updateFlagsFromOptionsTab()
     // What Magnification Type was chosen?
     imgProcFlags.colorMagnifyOn = (ui->MagnifcationtypeComboBox->currentIndex() == 1);
     imgProcFlags.laplaceMagnifyOn = (ui->MagnifcationtypeComboBox->currentIndex() == 2);
+    imgProcFlags.rieszMagnifyOn = (ui->MagnifcationtypeComboBox->currentIndex() == 3);
 
     emit newImageProcessingFlags(imgProcFlags);
 }
 
 void MagnifyOptions::updateSettingsFromOptionsTab()
 {
-    imgProcSettings.amplification = ui->AmplificationSpinBox->value();
-    imgProcSettings.coWavelength = ui->COWavelengthSpinBox->value()*10.0;
-    if(imgProcFlags.colorMagnifyOn) {
+    if(imgProcFlags.colorMagnifyOn)
+    {
+        imgProcSettings.amplification = ui->AmplificationSpinBox->value();
+        imgProcSettings.coWavelength = ui->COWavelengthSpinBox->value()*10.0;
+
         imgProcSettings.coLow = ui->COLowDoubleSpinBox->value();
         imgProcSettings.coHigh = ui->COHighDoubleSpinBox->value();
 
-        int hiBPM = imgProcSettings.coHigh*60.0;
-        int loBPM = imgProcSettings.coLow*60.0;
+        int hiBPM = static_cast<int>(imgProcSettings.coHigh*60.0);
+        int loBPM = static_cast<int>(imgProcSettings.coLow*60.0);
 
         QString loBpm = QString::number(loBPM);
         QString hiBpm = QString::number(hiBPM);
 
         ui->loBpm->setText(loBpm);
         ui->hiBpm->setText(hiBpm);
+
+        imgProcSettings.chromAttenuation = ui->ChromSpinBox->value()/100.0;
+        imgProcSettings.levels = ui->LevelsSpinBox->value();
     }
-    else if(imgProcFlags.laplaceMagnifyOn) {
+    else if(imgProcFlags.laplaceMagnifyOn)
+    {
+        imgProcSettings.amplification = ui->AmplificationSpinBox->value();
+        imgProcSettings.coWavelength = ui->COWavelengthSpinBox->value()*10.0;
+
         imgProcSettings.coLow = ui->COLowDoubleSpinBox->value()/100.0;
         imgProcSettings.coHigh = ui->COHighDoubleSpinBox->value()/100.0;
+
+        imgProcSettings.chromAttenuation = ui->ChromSpinBox->value()/100.0;
+        imgProcSettings.levels = ui->LevelsSpinBox->value();
     }
-    imgProcSettings.chromAttenuation = (double)ui->ChromSpinBox->value()/100.0;
-    imgProcSettings.levels = ui->LevelsSpinBox->value();
+    else if(imgProcFlags.rieszMagnifyOn)
+    {
+        imgProcSettings.amplification = ui->AmplificationSpinBox->value();
+        imgProcSettings.coWavelength = ui->COWavelengthSpinBox->value();
+        imgProcSettings.coLow = ui->COLowDoubleSpinBox->value();
+        imgProcSettings.coHigh = ui->COHighDoubleSpinBox->value();
+        imgProcSettings.levels = ui->LevelsSpinBox->value();
+    }
 
     emit newImageProcessingSettings(imgProcSettings);
 }
@@ -248,7 +316,9 @@ void MagnifyOptions::applyColorInterface()
 
     ui->AmplificationLabel->show();
     ui->AmplificationSlider->show();
+    ui->AmplificationSlider->setMaximum(200);
     ui->AmplificationSpinBox->show();
+    ui->AmplificationSpinBox->setMaximum(200);
     ui->AmplificationValLabel->show();
 
     ui->COWavelengthLabel->hide();
@@ -277,7 +347,7 @@ void MagnifyOptions::applyColorInterface()
     ui->resetButton->show();
 }
 
-void MagnifyOptions::applyMotionInterface()
+void MagnifyOptions::applyLaplaceInterface()
 {
     ui->LevelsSpinBox->setDisabled(false);
     ui->verticalSpacer->changeSize(0,20,QSizePolicy::Maximum, QSizePolicy::Maximum);
@@ -288,12 +358,17 @@ void MagnifyOptions::applyMotionInterface()
 
     ui->AmplificationLabel->show();
     ui->AmplificationSlider->show();
+    ui->AmplificationSlider->setMaximum(200);
     ui->AmplificationSpinBox->show();
+    ui->AmplificationSpinBox->setMaximum(200);
     ui->AmplificationValLabel->show();
 
     ui->COWavelengthLabel->show();
     ui->COWavelengthSlider->show();
+    ui->COWavelengthSlider->setMaximum(1000);
     ui->COWavelengthSpinBox->show();
+    ui->COWavelengthSpinBox->setMaximum(100.0);
+    ui->COWavelengthValLabel->setText("%");
     ui->COWavelengthValLabel->show();
 
     ui->DoubleSliderLabel->show();
@@ -317,6 +392,52 @@ void MagnifyOptions::applyMotionInterface()
     ui->resetButton->show();
 }
 
+void MagnifyOptions::applyRieszInterface()
+{
+    ui->LevelsSpinBox->setDisabled(false);
+    ui->verticalSpacer->changeSize(0,20,QSizePolicy::Maximum, QSizePolicy::Maximum);
+
+    ui->AmplificationLabel->show();
+    ui->AmplificationSlider->show();
+    ui->AmplificationSlider->setMaximum(100);
+    ui->AmplificationSpinBox->show();
+    ui->AmplificationSpinBox->setMaximum(100);
+    ui->AmplificationValLabel->show();
+
+    ui->COWavelengthLabel->show();
+    ui->COWavelengthSlider->show();
+    ui->COWavelengthSlider->setMaximum(100);
+    ui->COWavelengthSpinBox->show();
+    ui->COWavelengthSpinBox->setMaximum(100.0);
+    ui->COWavelengthValLabel->setText("n/100");
+    ui->COWavelengthValLabel->show();
+
+    // Can only choose frequencies < f/2 (Nyquist). *100 bc slider works on ints...
+    double nyquistFr = this->imgProcSettings.framerate/2.0;
+    doubleSlider->setMaximum(  static_cast<int>(nyquistFr*100.0) );
+    ui->COHighDoubleSpinBox->setMaximum(nyquistFr);
+    ui->COLowDoubleSpinBox->setMaximum(nyquistFr);
+    ui->DoubleSliderLabel->show();
+    ui->COHighDoubleSpinBox->show();
+    ui->COLowDoubleSpinBox->show();
+    doubleSlider->show();
+    ui->DoubleSliderValLabel->show();
+
+    ui->ChromSpinBox->hide();
+    ui->ChromSlider->hide();
+    ui->ChromLabel->hide();
+    ui->ChromValLabel->hide();
+
+    ui->BpmLabel->hide();
+    ui->BpmSpacer->hide();
+    ui->loBpm->hide();
+    ui->hiBpm->hide();
+    ui->HzSpacer->show();
+    ui->DoubleSliderValLabel->setText("Hz");
+
+    ui->resetButton->show();
+}
+
 void MagnifyOptions::toggleGrayscale(bool isActive)
 {
     ui->grayscaleCheckBox->setDisabled(!isActive);
@@ -324,8 +445,10 @@ void MagnifyOptions::toggleGrayscale(bool isActive)
 
 void MagnifyOptions::setMaxLevel(int level)
 {
-    if(ui->LevelsSpinBox->value() > level) {
-        ui->LevelsSpinBox->setValue(level);
-    }
+    // Alwys set to highest level when ROI changes/on start
+    ui->LevelsSpinBox->setValue(level);
     ui->LevelsSpinBox->setMaximum(level);
+    this->imgProcSettings.levels = level;
+
+    emit newImageProcessingSettings(imgProcSettings);
 }

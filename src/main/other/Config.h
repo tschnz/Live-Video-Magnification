@@ -44,9 +44,6 @@
 #define DEFAULT_LAP_MAG_EXAGGERATION        2.0
 #define DEFAULT_LAP_MAG_LEVELS              4
 
-#define DEFAULT_PB_MAG_LEVELS              5
-
-
 // General Default on Startup
 #define DEFAULT_GRAYSCALE                   false
 #define DEFAULT_MAGNIFY_TYPE                0 // Options: [NONE=0,-1;COLOR=1;LAPLACE=2;RIESZ=3]

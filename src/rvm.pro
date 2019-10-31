@@ -68,6 +68,7 @@ SOURCES += main/main.cpp \
     main/helper/MatToQImage.cpp \
     main/helper/SharedImageBuffer.cpp \
     main/magnification/Magnificator.cpp \
+    main/magnification/RieszPyramid.cpp \
     main/magnification/SpatialFilter.cpp \
     main/magnification/TemporalFilter.cpp \
     main/threads/CaptureThread.cpp \
@@ -84,9 +85,11 @@ SOURCES += main/main.cpp \
     external/qxtSlider/qxtspanslider.cpp
 
 HEADERS += \
+    main/helper/ComplexMat.h \
     main/helper/MatToQImage.h \
     main/helper/SharedImageBuffer.h \
     main/magnification/Magnificator.h \
+    main/magnification/RieszPyramid.h \
     main/magnification/SpatialFilter.h \
     main/magnification/TemporalFilter.h \
     main/threads/CaptureThread.h \

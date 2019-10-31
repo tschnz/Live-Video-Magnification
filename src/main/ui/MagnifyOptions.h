@@ -46,6 +46,7 @@ public:
     ImageProcessingSettings getSettings();
     ImageProcessingFlags getFlags();
     void toggleGrayscale(bool isActive);
+    void setFPS(double fps);
 
 private:
     Ui::MagnifyOptions *ui;
@@ -55,17 +56,18 @@ private:
 
 public slots:
     void setMaxLevel(int level);
+    void reset();
 
 private slots:
     void updateFlagsFromOptionsTab();
     void updateSettingsFromOptionsTab();
-    void reset();
     void reset(int);
     // Internal slots supporting GUI
     void convertFromSpinBox(double val);
     void convertFromSlider(int val);
     void applyColorInterface();
-    void applyMotionInterface();
+    void applyLaplaceInterface();
+    void applyRieszInterface();
 
 signals:
     void newImageProcessingFlags(struct ImageProcessingFlags);

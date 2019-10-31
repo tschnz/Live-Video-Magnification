@@ -40,84 +40,28 @@ Magnificator::Magnificator(std::vector<Mat> *pBuffer,
     lambda = 0;
     delta = 0;
 }
+Magnificator::~Magnificator()
+{
+    clearBuffer();
+}
 
 int Magnificator::calculateMaxLevels()
 {
     Size s = processingBuffer->front().size();
-    int highest = (s.width > s.height) ? s.height : s.width;
-    int max = floor(log2(highest));
-
-    return max;
+    return calculateMaxLevels(s);
 }
 int Magnificator::calculateMaxLevels(QRect r)
 {
     Size s = Size(r.width(),r.height());
-    int highest = (s.width > s.height) ? s.height : s.width;
-    int max = floor(log2(highest));
-
-    return max;
+    return calculateMaxLevels(s);
 }
 int Magnificator::calculateMaxLevels(Size s)
 {
-    int highest = (s.width > s.height) ? s.height : s.width;
-    int max = floor(log2(highest));
-
-    return max;
-}
-
-void Magnificator::BGR2YCbCr(const Mat &src, Mat &dst)
-{
-    Mat image = Mat::zeros(src.size(), src.type());
-
-    const uchar* uc_pixel = src.data;
-    uchar* c_pixel = image.data;
-    for (int row = 0; row < src.rows; ++row)
-    {
-        uc_pixel = src.data + row*src.step;
-        c_pixel = image.data + row*src.step;
-        for (int col = 0; col < src.cols; ++col)
-        {
-            int R = uc_pixel[0];
-            int G = uc_pixel[1];
-            int B = uc_pixel[2];
-
-            c_pixel[0] = 0 + 0.299*R + 0.587*G + 0.114*B;
-            c_pixel[1] = 128 - 0.169*R - 0.331*G + 0.5*B;
-            c_pixel[2] = 128 + 0.5*R - 0.419*G - 0.081*B;
-
-            uc_pixel += 3;
-            c_pixel += 3;
-        }
-   }
-
-    dst = image;
-}
-void Magnificator::YCbCr2BGR(const Mat &src, Mat &dst)
-{
-    Mat image = Mat::zeros(src.size(), src.type());
-
-    const uchar* uc_pixel = src.data;
-    uchar* c_pixel = image.data;
-    for (int row = 0; row < src.rows; ++row)
-    {
-        uc_pixel = src.data + row*src.step;
-        c_pixel = image.data + row*src.step;
-        for (int col = 0; col < src.cols; ++col)
-        {
-            int Y = uc_pixel[0];
-            int Cb = uc_pixel[1];
-            int Cr = uc_pixel[2];
-
-            c_pixel[0] = Y + 1.4*(Cr-128);
-            c_pixel[1] = Y - 0.343*(Cb-128) - 0.711*(Cr-128);
-            c_pixel[2] = Y + 1.765*(Cb-128);
-
-            uc_pixel += 3;
-            c_pixel += 3;
-        }
-   }
-
-    dst = image;
+    if (s.width > 5 && s.height > 5) {
+        const cv::Size halved((1 + s.width) / 2, (1 + s.height) / 2);
+        return 1 + calculateMaxLevels(halved);
+    }
+    return 0;
 }
 
 ////////////////////////
@@ -223,7 +167,6 @@ void Magnificator::laplaceMagnify() {
         pChannels = input.channels();
         if(!(imgProcFlags->grayscaleOn || pChannels <= 2)) {
             // Convert color images to YCrCb
-            //BGR2YCbCr(input, input);
             input.convertTo(input, CV_32FC3, 1.0/255.0f);
             cvtColor(input, input, cv::COLOR_BGR2YCrCb);
         }
@@ -281,10 +224,129 @@ void Magnificator::laplaceMagnify() {
             // Convert YCrCb image back to BGR
             cvtColor(output, output, cv::COLOR_YCrCb2BGR);
             output.convertTo(output, CV_8UC3, 255.0, 1.0/255.0);
-            //YCbCr2BGR(output, output);
         }
         else
             output.convertTo(output, CV_8UC1, 255.0, 1.0/255.0);
+
+        // Fill internal buffer with magnified image
+        magnifiedBuffer.push_back(output);
+        ++currentFrame;
+    }
+}
+
+void Magnificator::rieszMagnify()
+{
+    int pBufferElements = static_cast<int>(processingBuffer->size());
+    // Magnify only when processing buffer holds new images
+    if(currentFrame >= pBufferElements)
+        return;
+    // Number of levels in pyramid
+    levels = imgProcSettings->levels;
+
+    Mat buffer_in, input, magnified, output;
+    std::vector<cv::Mat> channels;
+    int pChannels;
+    static const double PI_PERCENT = M_PI / 100.0;
+
+    // Process every frame in buffer that wasn't magnified yet
+    while(currentFrame < pBufferElements)
+    {
+        // Grab oldest frame from processingBuffer and delete it to save memory
+        buffer_in = processingBuffer->front().clone();
+        if(currentFrame > 0)
+        {
+            processingBuffer->erase(processingBuffer->begin());
+        }
+
+        // Convert input image to 32bit float
+        pChannels = buffer_in.channels();
+        if(!(imgProcFlags->grayscaleOn || pChannels <= 2))
+        {
+            // Convert color images to YCrCb
+            buffer_in.convertTo(buffer_in, CV_32FC3, 1.0/255.0);
+            cvtColor(buffer_in, buffer_in, COLOR_BGR2YCrCb);
+            cv::split(buffer_in, channels);
+            input = channels[0];
+        }
+        else
+        {
+            buffer_in.convertTo(input, CV_32FC1, 1.0/255.0);
+        }
+
+        // If first frame ever, init pointer and init class
+        if( !(curPyr && oldPyr && loCutoff && hiCutoff) )
+        {
+            curPyr.reset();
+            oldPyr.reset();
+            loCutoff.reset();
+            hiCutoff.reset();
+            // Pyramids
+            curPyr = std::shared_ptr<RieszPyramid>(new RieszPyramid());
+            oldPyr = std::shared_ptr<RieszPyramid>(new RieszPyramid());
+            curPyr->init(input, levels);
+            oldPyr->init(input, levels);
+            // Temporal Bandpass Filters, low and highpass (Butterworth)
+            loCutoff = std::shared_ptr<RieszTemporalFilter>(new RieszTemporalFilter(imgProcSettings->coLow, imgProcSettings->framerate));
+            hiCutoff = std::shared_ptr<RieszTemporalFilter>(new RieszTemporalFilter(imgProcSettings->coHigh, imgProcSettings->framerate));
+            loCutoff->computeCoefficients();
+            hiCutoff->computeCoefficients();
+        }
+        else
+        {
+            // Check if temporal filter setting was updated
+            // Update low and highpass butterworth filter coefficients if changed in GUI
+            if(loCutoff->itsFrequency != imgProcSettings->coLow)
+            {
+                loCutoff->updateFrequency(imgProcSettings->coLow);
+            }
+            if(hiCutoff->itsFrequency != imgProcSettings->coHigh)
+            {
+                hiCutoff->updateFrequency(imgProcSettings->coHigh);
+            }
+
+            /* 1. BUILD RIESZ PYRAMID */
+            curPyr->buildPyramid(input);
+            /* 2. UNWRAPE PHASE TO GET HORIZ&VERTICAL / SIN&COS */
+            curPyr->unwrapOrientPhase(*oldPyr);
+            // 3. BANDPASS FILTER ON EACH LEVEL
+            for (int lvl = 0; lvl < curPyr->numLevels-1; ++lvl) {
+                loCutoff->pass(curPyr->pyrLevels[lvl].itsImagPass,
+                              curPyr->pyrLevels[lvl].itsPhase,
+                              oldPyr->pyrLevels[lvl].itsPhase);
+
+                hiCutoff->pass(curPyr->pyrLevels[lvl].itsRealPass,
+                              curPyr->pyrLevels[lvl].itsPhase,
+                              oldPyr->pyrLevels[lvl].itsPhase);
+            }
+            // Shift current to prior for next iteration
+            *oldPyr = *curPyr;
+            // 4. AMPLIFY MOTION
+            curPyr->amplify(imgProcSettings->amplification, imgProcSettings->coWavelength*PI_PERCENT);
+        }
+
+        /* 6. ADD MOTION TO ORIGINAL IMAGE */
+        if(currentFrame > 0)
+        {
+            magnified = curPyr->collapsePyramid();
+        }
+        else
+        {
+            magnified = input;
+        }
+
+        // Scale output image and convert back to 8bit unsigned
+        if(!(imgProcFlags->grayscaleOn || pChannels <= 2))
+        {
+            // Convert YCrCb image back to BGR
+            channels[0] = magnified;
+            cv::merge(channels, output);
+            cvtColor(output, output, COLOR_YCrCb2BGR);
+            output.convertTo(output, CV_8UC3, 255.0, 1.0/255.0);
+        }
+        else
+        {
+            magnified.convertTo(output, CV_8UC1, 255.0, 1.0/255.0);
+        }
 
         // Fill internal buffer with magnified image
         magnifiedBuffer.push_back(output);
@@ -333,6 +395,11 @@ Mat Magnificator::getFrameAt(int n)
     return img;
 }
 
+bool Magnificator::hasFrame()
+{
+    return !this->magnifiedBuffer.empty();
+}
+
 int Magnificator::getBufferSize()
 {
     return magnifiedBuffer.size();
@@ -345,11 +412,12 @@ void Magnificator::clearBuffer()
     this->lowpassHi.clear();
     this->lowpassLo.clear();
     this->motionPyramid.clear();
-    this->wlLowpassHi.clear();
-    this->wlLowpassLo.clear();
-    this->wlMotionPyramid.clear();
     this->downSampledMat = Mat();
     this->currentFrame = 0;
+    oldPyr.reset();
+    curPyr.reset();
+    loCutoff.reset();
+    hiCutoff.reset();
 }
 
 
@@ -393,17 +461,6 @@ void Magnificator::attenuate(const Mat &src, Mat &dst)
         planes[2] = planes[2] * imgProcSettings->chromAttenuation;
         merge(planes, 3, dst);
     }
-}
-
-void Magnificator::amplifyWavelet(const vector<Mat> &src, vector<Mat> &dst, int currentLevel)
-{
-    float currAlpha = (lambda/(delta*8.0) - 1.0) * exaggeration_factor;
-    // Set reference image (lowest resolution) to 0, amplify every other channel
-    for(int dims = 0; dims < 3; ++dims) {
-        dst.at(dims) = src.at(dims) * std::min((float)imgProcSettings->amplification, currAlpha);
-    }
-    if(currentLevel == levels-1)
-        dst.at(3) = src.at(3) * 0;
 }
 
 void Magnificator::amplifyGaussian(const Mat &src, Mat &dst)

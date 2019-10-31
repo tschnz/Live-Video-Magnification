@@ -42,7 +42,6 @@ SavingThread::~SavingThread()
 
     doStop = true;
     releaseFile();
-    doStopMutex.unlock();
     wait();
 }
 
@@ -106,6 +105,10 @@ void SavingThread::run()
         }
         else if(imgProcFlags.laplaceMagnifyOn) {
             magnificator.laplaceMagnify();
+            processedFrame = magnificator.getFrameFirst();
+        }
+        else if(imgProcFlags.rieszMagnifyOn) {
+            magnificator.rieszMagnify();
             processedFrame = magnificator.getFrameFirst();
         }
         else {
@@ -189,6 +192,9 @@ bool SavingThread::saveFile(std::string destination, double framerate, QRect dim
         processingBufferLength = magnificator.getOptimalBufferSize(framerate);
     }
     else if(imgProcFlags.laplaceMagnifyOn) {
+        processingBufferLength = 2;
+    }
+    else if(imgProcFlags.rieszMagnifyOn) {
         processingBufferLength = 2;
     }
     else

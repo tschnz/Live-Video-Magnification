@@ -54,8 +54,9 @@ VideoView::VideoView(QWidget *parent, QString filepath) :
 
     // Initialize ImageProcessingFlags structure
     imageProcessingFlags.grayscaleOn=false;
-    imageProcessingFlags.laplaceMagnifyOn = false;
     imageProcessingFlags.colorMagnifyOn = false;
+    imageProcessingFlags.laplaceMagnifyOn = false;
+    imageProcessingFlags.rieszMagnifyOn = false;
 
     // Connect signals/slots
     connect(ui->hideSettingsButton, SIGNAL(released()), this, SLOT(hideSettings()));
@@ -105,11 +106,14 @@ bool VideoView::loadVideo(int threadPrio, int width, int height, double fps)
 
         // Create MagnifyOptions tab and set current
         this->magnifyOptionsTab = new MagnifyOptions();
+        this->magnifyOptionsTab->setFPS(playerThread->getFPS());
+        this->magnifyOptionsTab->reset();
         ui->tabWidget->insertTab(0,magnifyOptionsTab,tr("Options"));
         ui->tabWidget->setCurrentIndex(0);
         ui->InfoTab->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Ignored);
 
         // Setup signal/slot connections
+        connect(playerThread, SIGNAL(maxLevels(int)), magnifyOptionsTab, SLOT(setMaxLevel(int)));
         connect(ui->tabWidget, SIGNAL(currentChanged(int)), this, SLOT(handleTabChange(int)));
         connect(this, SIGNAL(newImageProcessingFlags(struct ImageProcessingFlags)), playerThread, SLOT(updateImageProcessingFlags(struct ImageProcessingFlags)));
         connect(this, SIGNAL(setROI(QRect)), playerThread, SLOT(setROI(QRect)));

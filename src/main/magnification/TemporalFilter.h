@@ -24,10 +24,15 @@
 
 #ifndef TEMPORALFILTER_H
 #define TEMPORALFILTER_H
+
+// Project
+#include "main/helper/ComplexMat.h"
 // OpenCV
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
+
+#define M_PI 3.14159265358979323846264338327950288
 
 using namespace cv;
 using namespace std;
@@ -93,5 +98,39 @@ void iirWaveletFilter(const vector<Mat> &src, vector<Mat> &dst, vector<Mat> &low
  * \param framerate
  */
 void idealFilter(const Mat &src, Mat &dst, double cutoffLo, double cutoffHi, double framerate);
+
+///
+// From https://github.com/tbl3rd/Pyramids
+///
+// Temp Filter for Riesz Pyramid
+class RieszTemporalFilter {
+
+    RieszTemporalFilter &operator=(const RieszTemporalFilter &);
+    RieszTemporalFilter(const RieszTemporalFilter &);
+
+public:
+    RieszTemporalFilter(): itsFrequency(0.0), itsFramerate(0.0), itsA(), itsB() { }
+    RieszTemporalFilter(double frq, double fps): itsFrequency(frq), itsFramerate(fps), itsA(), itsB() { }
+
+    double itsFrequency;
+    double itsFramerate;
+    std::vector<double> itsA;
+    std::vector<double> itsB;
+
+    // Compute this filter's Butterworth coefficients for the sampling
+    // frequency, fps (frames per second).
+    //
+    void updateFramerate(double framerate);
+    void updateFrequency(double f);
+    void computeCoefficients();
+
+    void passEach(cv::Mat &result,
+                  const cv::Mat &phase,
+                  const cv::Mat &prior);
+
+    void pass(CompExpMat &result,
+              const CompExpMat &phase,
+              const CompExpMat &prior);
+};
 
 #endif // TEMPORALFILTER_H

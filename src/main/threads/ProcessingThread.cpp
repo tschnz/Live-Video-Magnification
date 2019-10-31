@@ -129,6 +129,11 @@ void ProcessingThread::run()
                magnificator.laplaceMagnify();
                currentFrame = magnificator.getFrameLast();
            }
+           else if(imgProcFlags.rieszMagnifyOn)
+           {
+               magnificator.rieszMagnify();
+               currentFrame = magnificator.getFrameLast();
+           }
            else
                processingBuffer.erase(processingBuffer.begin());
        }
@@ -246,6 +251,7 @@ void ProcessingThread::updateImageProcessingFlags(struct ImageProcessingFlags im
     this->imgProcFlags.grayscaleOn = imageProcessingFlags.grayscaleOn;
     this->imgProcFlags.colorMagnifyOn = imageProcessingFlags.colorMagnifyOn;
     this->imgProcFlags.laplaceMagnifyOn = imageProcessingFlags.laplaceMagnifyOn;
+    this->imgProcFlags.rieszMagnifyOn = imageProcessingFlags.rieszMagnifyOn;
     processingBuffer.clear();
     magnificator.clearBuffer();
 }
