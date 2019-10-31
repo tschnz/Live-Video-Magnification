@@ -1,4 +1,4 @@
-# Realtime-Video-Magnification
+# Live Motion Magnification
 An OpenCV/Qt based realtime application to magnify motion and color in videos and camerastreams
 
 ## _UPDATE (31.10.2019)_
