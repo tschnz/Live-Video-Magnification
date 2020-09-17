@@ -5,9 +5,11 @@ linux {
 # !! Not tested, change to match your OpenCV (>= v4) installation #
     QT_CONFIG -= no-pkg-config
     CONFIG += link_pkgconfig
-    PKGCONFIG += opencv
+    PKGCONFIG += opencv4
 # !! Not tested, change to match your OpenCV (>= v4) installation #
 ###################################################################
+    # Spare me those nasty C++ compiler warnings and pray instead
+    QMAKE_CXXFLAGS += -Wall
 }
 
 win32 {
@@ -46,6 +48,9 @@ win32 {
 
     CV22_INCLUDE =
     CV22_LIB =
+
+    # Spare me those nasty C++ compiler warnings and pray instead
+    QMAKE_CXXFLAGS += -W2
 }
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
@@ -116,6 +121,3 @@ FORMS += \
     main/ui/CameraConnectDialog.ui \
     main/ui/MagnifyOptions.ui \
     main/ui/VideoView.ui
-
-# Spare me those nasty C++ compiler warnings and pray instead
-QMAKE_CXXFLAGS += -W2
