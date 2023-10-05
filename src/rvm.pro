@@ -1,61 +1,12 @@
 QT += core gui
-
-linux {
-###################################################################
-# !! Not tested, change to match your OpenCV (>= v4) installation #
-    QT_CONFIG -= no-pkg-config
-    CONFIG += link_pkgconfig
-    PKGCONFIG += opencv
-# !! Not tested, change to match your OpenCV (>= v4) installation #
-###################################################################
-}
-
-win32 {
-    ##########################################################################
-    # !! Change this to match your OpenCV (>= v4) installation on Windows !! #
-    INCLUDEPATH += D:/Programme/OpenCV/source/opencv/install/include
-    CONFIG(release, debug|release) {
-        LIBS += D:\Programme\OpenCV\source\opencv\install\x64\vc15\lib\opencv_core412.lib
-        LIBS += D:\Programme\OpenCV\source\opencv\install\x64\vc15\lib\opencv_highgui412.lib
-        LIBS += D:\Programme\OpenCV\source\opencv\install\x64\vc15\lib\opencv_imgproc412.lib
-        LIBS += D:\Programme\OpenCV\source\opencv\install\x64\vc15\lib\opencv_imgcodecs412.lib
-        LIBS += D:\Programme\OpenCV\source\opencv\install\x64\vc15\lib\opencv_videoio412.lib
-        LIBS += D:\Programme\OpenCV\source\opencv\install\x64\vc15\lib\opencv_video412.lib
-        LIBS += D:\Programme\OpenCV\source\tbb2019_20190605oss\lib\intel64\vc14\tbb.lib
-    }
-    CONFIG(debug, debug|release) {
-        DEFINES += DEBUG_MODE
-        LIBS += D:\Programme\OpenCV\source\opencv\install\x64\vc15\lib\opencv_core412d.lib
-        LIBS += D:\Programme\OpenCV\source\opencv\install\x64\vc15\lib\opencv_highgui412d.lib
-        LIBS += D:\Programme\OpenCV\source\opencv\install\x64\vc15\lib\opencv_imgproc412d.lib
-        LIBS += D:\Programme\OpenCV\source\opencv\install\x64\vc15\lib\opencv_imgcodecs412d.lib
-        LIBS += D:\Programme\OpenCV\source\opencv\install\x64\vc15\lib\opencv_videoio412d.lib
-        LIBS += D:\Programme\OpenCV\source\opencv\install\x64\vc15\lib\opencv_video412d.lib
-        LIBS += D:\Programme\OpenCV\source\tbb2019_20190605oss\lib\intel64\vc14\tbb_debug.lib
-    }
-    LIBS += -L"D:/Programme/OpenCV/source/opencv/install/x64/vc15/bin"
-    # !! Change this to match your OpenCV (>= v4) installation on Windows !! #
-    ##########################################################################
-
-    # Comment out if OpenCV was compiled without TBB
-    LIBS += -L"D:/Programme/OpenCV/source/tbb2019_20190605oss/bin/intel64/vc14"
-
-    # Place compiled filed inside distinct release and debug folder
-    # without another release and debug folder within each release and debug folder
-    CONFIG -= debug_and_release debug_and_release_target
-
-    CV22_INCLUDE =
-    CV22_LIB =
-}
-
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = rvm
 TEMPLATE = app
-
 DEFINES += APP_VERSION=\\\"1.0\\\"
 
-INCLUDEPATH += $$PWD/main \
+INCLUDEPATH += \
+    $$PWD/main \
     $$PWD/main/helper \
     $$PWD/main/magnification \
     $$PWD/main/other \
@@ -64,7 +15,8 @@ INCLUDEPATH += $$PWD/main \
     $$PWD/external \
     $$PWD/external/qxtSlider
 
-SOURCES += main/main.cpp \
+SOURCES += \
+    main/main.cpp \
     main/helper/MatToQImage.cpp \
     main/helper/SharedImageBuffer.cpp \
     main/magnification/Magnificator.cpp \
@@ -118,4 +70,10 @@ FORMS += \
     main/ui/VideoView.ui
 
 # Spare me those nasty C++ compiler warnings and pray instead
-QMAKE_CXXFLAGS += -W2
+#QMAKE_CXXFLAGS += -W2
+
+# OpenCV Configuration using pkg-config
+unix {
+    CONFIG += link_pkgconfig
+    PKGCONFIG += opencv4
+}
