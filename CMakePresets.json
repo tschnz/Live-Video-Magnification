@@ -1,0 +1,36 @@
+{
+    "version": 2,
+    "configurePresets": [
+        {
+            "name": "ninja-nmc",
+            "displayName": "Ninja Multi-Config Qt",
+            "generator": "Ninja Multi-Config",
+            "binaryDir": "${sourceDir}/build",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug;RelWithDebInfo;Release",
+                "CMAKE_PREFIX_PATH": "C:/Qt/6.8.0/msvc2022_64",
+                "CMAKE_MAKE_PROGRAM": "C:/Qt/Tools/Ninja/ninja.exe"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "debug",
+            "displayName": "Ninja Debug",
+            "configurePreset": "ninja-nmc",
+            "configuration": "Debug"
+        },
+        {
+            "name": "relwithdeb",
+            "displayName": "Ninja RelWithDeb",
+            "configurePreset": "ninja-nmc",
+            "configuration": "RelWithDeb"
+        },
+        {
+            "name": "release",
+            "displayName": "Ninja Release",
+            "configurePreset": "ninja-nmc",
+            "configuration": "Release"
+        }
+    ]
+}
