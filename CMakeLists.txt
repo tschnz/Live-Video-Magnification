@@ -92,30 +92,3 @@ install(
     TARGETS ${PROJECT_NAME}
     BUNDLE DESTINATION /Applications
 )
-
-# Copy Qt and OpenCV libraries to the executable folder
-# if(WIN32)
-#     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-#         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-#         $<TARGET_FILE:Qt6::Widgets>
-#         $<TARGET_FILE_DIR:${PROJECT_NAME}>
-#     )
-#     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-#         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-#         $<TARGET_FILE:Qt6::Gui>
-#         $<TARGET_FILE_DIR:${PROJECT_NAME}>
-#     )
-#     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-#         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-#         $<TARGET_FILE:Qt6::Core>
-#         $<TARGET_FILE_DIR:${PROJECT_NAME}>
-#     )
-
-#     foreach(opencv_lib ${OpenCV_LIBS})
-#         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-#             COMMAND ${CMAKE_COMMAND} -E copy_if_different
-#             $<TARGET_FILE:${opencv_lib}>
-#             $<TARGET_FILE_DIR:${PROJECT_NAME}>
-#         )
-#     endforeach()
-# endif()
