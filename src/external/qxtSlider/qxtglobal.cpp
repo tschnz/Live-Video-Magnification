@@ -74,10 +74,7 @@
 
     \sa QXT_VERSION_STR
  */
-const char* qxtVersion()
-{
-    return QXT_VERSION_STR;
-}
+const char *qxtVersion() { return QXT_VERSION_STR; }
 
 /*!
 \headerfile <QxtPimpl>
@@ -165,12 +162,13 @@ void MyTestPrivate::doQuux() {
 \endcode
 */
 
-/*! 
+/*!
  * \macro QXT_DECLARE_PRIVATE(PUB)
  * \relates <QxtPimpl>
  * Declares that a public class has a related private class.
  *
- * This shuold be put in the private section of the public class. The parameter is the name of the public class.
+ * This shuold be put in the private section of the public class. The parameter
+ * is the name of the public class.
  */
 
 /*!
@@ -178,7 +176,8 @@ void MyTestPrivate::doQuux() {
  * \relates <QxtPimpl>
  * Declares that a private class has a related public class.
  *
- * This may be put anywhere in the declaration of the private class. The parameter is the name of the public class.
+ * This may be put anywhere in the declaration of the private class. The
+ * parameter is the name of the public class.
  */
 
 /*!
@@ -187,7 +186,8 @@ void MyTestPrivate::doQuux() {
  * Initializes resources owned by the private class.
  *
  * This should be called from the public class's constructor,
- * before qxt_d() is used for the first time. The parameter is the name of the public class.
+ * before qxt_d() is used for the first time. The parameter is the name of the
+ * public class.
  */
 
 /*!
