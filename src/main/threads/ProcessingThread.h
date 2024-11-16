@@ -28,9 +28,9 @@
 
 // Qt
 #include "QDebug"
+#include <QtCore/QElapsedTimer>
 #include <QtCore/QQueue>
 #include <QtCore/QThread>
-#include <QtCore/QTime>
 // OpenCV
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/opencv.hpp>
@@ -72,7 +72,7 @@ private:
   Mat originalFrame;
   Rect currentROI;
   QImage frame;
-  QTime t;
+  QElapsedTimer t;
   QQueue<int> fps;
   QMutex doStopMutex;
   QMutex processingMutex;

@@ -67,7 +67,7 @@ void PlayerThread::run() {
   // The standard delay time to keep FPS playing rate without processing time
   double delay = 1000.0 / fps;
   qDebug() << "Starting player thread...";
-  QTime mTime;
+  QElapsedTimer mTime;
 
   /////////////////////////////////////
   /// Stop thread if doStop=TRUE /////

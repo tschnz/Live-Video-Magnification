@@ -24,6 +24,7 @@
 /************************************************************************************/
 
 #include "main/magnification/Magnificator.h"
+#include <numbers>
 
 ////////////////////////
 /// Constructor /////////
@@ -243,7 +244,7 @@ void Magnificator::rieszMagnify() {
   Mat buffer_in, input, magnified, output;
   std::vector<cv::Mat> channels;
   int pChannels;
-  static const double PI_PERCENT = M_PI / 100.0;
+  static const double PI_PERCENT = std::numbers::pi / 100.0;
 
   // Process every frame in buffer that wasn't magnified yet
   while (currentFrame < pBufferElements) {

@@ -78,19 +78,44 @@ set(UI_FILES
     src/main/ui/VideoView.ui
 )
 
-qt_add_executable(LiveVideoMagnification ${SOURCES} ${HEADERS} ${UI_FILES})
-qt6_add_ui(LiveVideoMagnification SOURCES ${UI_FILES})
+qt_add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS} ${UI_FILES})
+qt6_add_ui(${PROJECT_NAME} SOURCES ${UI_FILES})
 
-target_include_directories(LiveVideoMagnification PRIVATE
-    ${OPENCV_CONFIG_FILE_INCLUDE_DIR}
-    ${OPENCV_MODULE_opencv_core_LOCATION}/include
-    ${OPENCV_MODULE_opencv_highgui_LOCATION}/include
-    ${OPENCV_MODULE_opencv_imgproc_LOCATION}/include
-)
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets ${OpenCV_LIBS})
 
-target_link_libraries(LiveVideoMagnification PRIVATE Qt6::Widgets ${OpenCV_LIBS})
-
-set_target_properties(LiveVideoMagnification PROPERTIES
+set_target_properties(${PROJECT_NAME} PROPERTIES
     WIN32_EXECUTABLE ON
     MACOSX_BUNDLE ON
 )
+
+install(
+    TARGETS ${PROJECT_NAME}
+    BUNDLE DESTINATION /Applications
+)
+
+# Copy Qt and OpenCV libraries to the executable folder
+# if(WIN32)
+#     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+#         COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#         $<TARGET_FILE:Qt6::Widgets>
+#         $<TARGET_FILE_DIR:${PROJECT_NAME}>
+#     )
+#     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+#         COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#         $<TARGET_FILE:Qt6::Gui>
+#         $<TARGET_FILE_DIR:${PROJECT_NAME}>
+#     )
+#     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+#         COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#         $<TARGET_FILE:Qt6::Core>
+#         $<TARGET_FILE_DIR:${PROJECT_NAME}>
+#     )
+
+#     foreach(opencv_lib ${OpenCV_LIBS})
+#         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+#             COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#             $<TARGET_FILE:${opencv_lib}>
+#             $<TARGET_FILE_DIR:${PROJECT_NAME}>
+#         )
+#     endforeach()
+# endif()

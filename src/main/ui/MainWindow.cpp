@@ -26,6 +26,8 @@
 #include "main/ui/MainWindow.h"
 #include "ui_MainWindow.h"
 
+#include <QActionGroup>
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow) {
   // Setup UI

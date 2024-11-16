@@ -24,6 +24,7 @@
 /************************************************************************************/
 
 #include "main/magnification/TemporalFilter.h"
+#include <numbers>
 
 ////////////////////////
 /// Filter //////////////
@@ -379,7 +380,7 @@ static void prototypeAnalogButterworth(unsigned N,
                                        double &gain) {
   static const std::complex<double> j = std::complex<double>(0, 1.0);
   for (unsigned k = 1; k < N + 1; ++k) {
-    poles.push_back(exp(j * (2.0 * k - 1) / (2.0 * N) * M_PI) * j);
+    poles.push_back(exp(j * (2.0 * k - 1) / (2.0 * N) * std::numbers::pi) * j);
   }
   gain = 1.0;
   zeros.clear();
@@ -394,7 +395,7 @@ static void prototypeAnalogButterworth(unsigned N,
 void butterworth(unsigned int N, double Wn, std::vector<double> &out_a,
                  std::vector<double> &out_b) {
   static const double fs = 2.0;
-  const double w0 = 2.0 * fs * tan(M_PI * Wn / fs);
+  const double w0 = 2.0 * fs * tan(std::numbers::pi * Wn / fs);
   std::vector<std::complex<double>> zeros, poles;
   double gain;
   prototypeAnalogButterworth(N, zeros, poles, gain);

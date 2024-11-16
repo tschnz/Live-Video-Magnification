@@ -25,30 +25,37 @@
 
 #include "main/ui/CameraConnectDialog.h"
 #include "ui_CameraConnectDialog.h"
+#include <QRegularExpression>
+#include <QRegularExpressionValidator>
 
 CameraConnectDialog::CameraConnectDialog(QWidget *parent)
     : QDialog(parent), ui(new Ui::CameraConnectDialog) {
   // Setup dialog
   ui->setupUi(this);
   // deviceNumberEdit (device number) input validation
-  QRegExp rx1("^[0-9]{1,3}$"); // Integers 0 to 999
-  QRegExpValidator *validator1 = new QRegExpValidator(rx1, 0);
+  QRegularExpression rx1("^[0-9]{1,3}$"); // Integers 0 to 999
+  QRegularExpressionValidator *validator1 =
+      new QRegularExpressionValidator(rx1, 0);
   ui->deviceNumberEdit->setValidator(validator1);
   // imageBufferSizeEdit (image buffer size) input validation
-  QRegExp rx2("^[0-9]{1,3}$"); // Integers 0 to 999
-  QRegExpValidator *validator2 = new QRegExpValidator(rx2, 0);
+  QRegularExpression rx2("^[0-9]{1,3}$"); // Integers 0 to 999
+  QRegularExpressionValidator *validator2 =
+      new QRegularExpressionValidator(rx2, 0);
   ui->imageBufferSizeEdit->setValidator(validator2);
   // resWEdit (resolution: width) input validation
-  QRegExp rx3("^[0-9]{1,4}$"); // Integers 0 to 9999
-  QRegExpValidator *validator3 = new QRegExpValidator(rx3, 0);
+  QRegularExpression rx3("^[0-9]{1,4}$"); // Integers 0 to 9999
+  QRegularExpressionValidator *validator3 =
+      new QRegularExpressionValidator(rx3, 0);
   ui->resWEdit->setValidator(validator3);
   // resHEdit (resolution: height) input validation
-  QRegExp rx4("^[0-9]{1,4}$"); // Integers 0 to 9999
-  QRegExpValidator *validator4 = new QRegExpValidator(rx4, 0);
+  QRegularExpression rx4("^[0-9]{1,4}$"); // Integers 0 to 9999
+  QRegularExpressionValidator *validator4 =
+      new QRegularExpressionValidator(rx4, 0);
   ui->resHEdit->setValidator(validator4);
   // fpsEdit input validation
-  QRegExp rx5("^[0-9]{1,3}$"); // Integers 0 to 999
-  QRegExpValidator *validator5 = new QRegExpValidator(rx5, 0);
+  QRegularExpression rx5("^[0-9]{1,3}$"); // Integers 0 to 999
+  QRegularExpressionValidator *validator5 =
+      new QRegularExpressionValidator(rx5, 0);
   ui->fpsEdit->setValidator(validator5);
   // Setup combo boxes
   QStringList threadPriorities;

@@ -1,0 +1,19 @@
+{
+    "configurations": [
+        {
+            "type": "cppvsdbg",
+            "request": "launch",
+            "name": "Launch LiveVideoMagnification",
+            "program": "${workspaceFolder}/build/Debug/LiveVideoMagnification.exe",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "environment": [
+                {
+                    "name": "PATH",
+                    "value": "C:/Qt/6.8.0/msvc2022_64/bin;C:/Workspace/Programs/opencv/build/x64/vc16/bin;${env:PATH}"
+                }
+            ],
+            "stopAtEntry": false
+        }
+    ]
+}

@@ -33,8 +33,6 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
-#define M_PI 3.14159265358979323846264338327950288
-
 using namespace cv;
 using namespace std;
 

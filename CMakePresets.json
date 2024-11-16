@@ -7,9 +7,11 @@
             "generator": "Ninja Multi-Config",
             "binaryDir": "${sourceDir}/build",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug;RelWithDebInfo;Release",
                 "CMAKE_PREFIX_PATH": "C:/Qt/6.8.0/msvc2022_64",
                 "CMAKE_MAKE_PROGRAM": "C:/Qt/Tools/Ninja/ninja.exe"
+            },
+            "environment": {
+                "PATH": "C:/Qt/6.8.0/msvc2022_64/bin;C:/Workspace/Programs/opencv/build/x64/vc16/bin;$penv{PATH}"
             }
         }
     ],
