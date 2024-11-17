@@ -1,9 +1,4 @@
-///
-// From https://github.com/tbl3rd/Pyramids
-///
-
-#ifndef COMPLEXMAT_H
-#define COMPLEXMAT_H
+#pragma once
 
 #include <opencv2/core/core.hpp>
 
@@ -24,6 +19,20 @@ template <typename T> T cos(const std::pair<T, T> &p) { return p.first; }
 template <typename T> T &cos(std::pair<T, T> &p) { return p.first; }
 template <typename T> T sin(const std::pair<T, T> &p) { return p.second; }
 template <typename T> T &sin(std::pair<T, T> &p) { return p.second; }
+template <typename T> T vert(const std::pair<T, T> &p) { return p.first; }
+template <typename T> T &vert(std::pair<T, T> &p) { return p.first; }
+template <typename T> T hori(const std::pair<T, T> &p) { return p.second; }
+template <typename T> T &hori(std::pair<T, T> &p) { return p.second; }
+
+template <typename T> std::pair<T, T> clone(const std::pair<T, T> &rhs) {
+  std::pair<T, T> result;
+  result.first = rhs.first.clone();
+  result.second = rhs.second.clone();
+
+  return result;
+}
+
+// ----------------
 
 template <typename T>
 std::pair<T, T> &operator+=(std::pair<T, T> &x, const std::pair<T, T> &y) {
@@ -31,29 +40,97 @@ std::pair<T, T> &operator+=(std::pair<T, T> &x, const std::pair<T, T> &y) {
   x.second += y.second;
   return x;
 }
+
 template <typename T>
-std::pair<T, T> &
-operator-=(std::pair<T, T> &x,
-           const std::pair<T, T> &y) { // TODO should be x.second - y.second?
-                                       // otherwise y always zero
+std::pair<T, T> &operator-=(std::pair<T, T> &x, const std::pair<T, T> &y) {
   x.first -= y.first;
   x.second -= y.second;
   return x;
 }
 template <typename T>
+std::pair<T, T> &operator*=(std::pair<T, T> &x, const std::pair<T, T> &y) {
+  cv::multiply(x.first, y.first, x.first);
+  cv::multiply(x.second, y.second, x.second);
+  return x;
+}
+
+template <typename T, typename T2>
+std::pair<T, T> &operator*=(std::pair<T, T> &x, const T2 &y) {
+  cv::multiply(x.first, y, x.first);
+  cv::multiply(x.second, y, x.second);
+  return x;
+}
+template <typename T>
+std::pair<T, T> &operator/=(std::pair<T, T> &x, const std::pair<T, T> &y) {
+  cv::divide(x.first, y.first, x.first);
+  cv::divide(x.second, y.second, x.second);
+  return x;
+}
+
+template <typename T, typename T2>
+std::pair<T, T> &operator/=(std::pair<T, T> &x, const T2 &y) {
+  cv::divide(x.first, y, x.first);
+  cv::divide(x.second, y, x.second);
+  return x;
+}
+
+// --------------
+
+template <typename T>
 std::pair<T, T> operator+(const std::pair<T, T> &x, const std::pair<T, T> &y) {
-  std::pair<T, T> result(x);
+  // Clone matrices, otherwise result holds pointer to x and changes this mat as
+  // well
+  std::pair<T, T> result;
+  result.first = x.first.clone();
+  result.second = x.second.clone();
   result += y;
   return result;
 }
+
 template <typename T>
 std::pair<T, T> operator-(const std::pair<T, T> &x, const std::pair<T, T> &y) {
-  std::pair<T, T> result(x);
+  std::pair<T, T> result;
+  result.first = x.first.clone();
+  result.second = x.second.clone();
   result -= y;
   return result;
 }
-template <typename T> T square(const std::pair<T, T> &p) {
-  return p.first.mul(p.first) + p.second.mul(p.second);
+
+template <typename T>
+std::pair<T, T> operator*(const std::pair<T, T> &x, const std::pair<T, T> &y) {
+  std::pair<T, T> result;
+  result.first = x.first.clone();
+  result.second = x.second.clone();
+  result *= y;
+  return result;
+}
+template <typename T, typename T2>
+std::pair<T, T> operator*(const std::pair<T, T> &x, const T2 &y) {
+  std::pair<T, T> result;
+  result.first = x.first.clone();
+  result.second = x.second.clone();
+  result *= y;
+  return result;
 }
 
-#endif // COMPLEXMAT_H
+template <typename T>
+std::pair<T, T> operator/(const std::pair<T, T> &x, const std::pair<T, T> &y) {
+  std::pair<T, T> result;
+  result.first = x.first.clone();
+  result.second = x.second.clone();
+  result /= y;
+  return result;
+}
+template <typename T, typename T2>
+std::pair<T, T> operator/(const std::pair<T, T> &x, const T2 &y) {
+  std::pair<T, T> result;
+  result.first = x.first.clone();
+  result.second = x.second.clone();
+  result /= y;
+  return result;
+}
+
+template <typename T> T square(const std::pair<T, T> &p) {
+  cv::Mat result = p.first.mul(p.first) + p.second.mul(p.second);
+  return result;
+}

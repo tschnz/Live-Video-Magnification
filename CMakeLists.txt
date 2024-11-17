@@ -20,7 +20,7 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/src
 )
 
-# Define the executable
+# Gather all files necessary for the project
 set(SOURCES
     src/main/main.cpp
     src/main/helper/MatToQImage.cpp
@@ -42,7 +42,6 @@ set(SOURCES
     src/external/qxtSlider/qxtglobal.cpp
     src/external/qxtSlider/qxtspanslider.cpp
 )
-
 set(HEADERS
     src/main/helper/ComplexMat.h
     src/main/helper/MatToQImage.h
@@ -69,7 +68,6 @@ set(HEADERS
     src/external/qxtSlider/qxtspanslider.h
     src/external/qxtSlider/qxtspanslider_p.h
 )
-
 set(UI_FILES
     src/main/ui/MainWindow.ui
     src/main/ui/CameraView.ui

@@ -1,42 +1,16 @@
-/************************************************************************************/
-/* An OpenCV/Qt based realtime application to magnify motion and color */
-/* Copyright (C) 2015  Jens Schindel <kontakt@jens-schindel.de> */
-/*                                                                                  */
-/* Based on the work of */
-/*      Joseph Pan      <https://github.com/wzpan/QtEVM> */
-/*      Nick D'Ademo    <https://github.com/nickdademo/qt-opencv-multithreaded>
- */
-/*                                                                                  */
-/* Realtime-Video-Magnification->CameraView.h */
-/*                                                                                  */
-/* This program is free software: you can redistribute it and/or modify */
-/* it under the terms of the GNU General Public License as published by */
-/* the Free Software Foundation, either version 3 of the License, or */
-/* (at your option) any later version. */
-/*                                                                                  */
-/* This program is distributed in the hope that it will be useful, */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the */
-/* GNU General Public License for more details. */
-/*                                                                                  */
-/* You should have received a copy of the GNU General Public License */
-/* along with this program.  If not, see <http://www.gnu.org/licenses/>. */
-/************************************************************************************/
-
-#ifndef CAMERAVIEW_H
-#define CAMERAVIEW_H
+#pragma once
 
 // Qt
 #include <QDebug>
 #include <QFileDialog>
 #include <QMessageBox>
 // Local
-#include "main/helper/SharedImageBuffer.h"
-#include "main/other/Structures.h"
-#include "main/threads/CaptureThread.h"
-#include "main/threads/ProcessingThread.h"
-#include "main/ui/FrameLabel.h"
-#include "main/ui/MagnifyOptions.h"
+#include "../helper/SharedImageBuffer.h"
+#include "../other/Structures.h"
+#include "../threads/CaptureThread.h"
+#include "../threads/ProcessingThread.h"
+#include "FrameLabel.h"
+#include "MagnifyOptions.h"
 
 namespace Ui {
 class CameraView;
@@ -93,5 +67,3 @@ signals:
   newImageProcessingFlags(struct ImageProcessingFlags imageProcessingFlags);
   void setROI(QRect roi);
 };
-
-#endif // CAMERAVIEW_H

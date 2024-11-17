@@ -1,29 +1,4 @@
-/************************************************************************************/
-/* An OpenCV/Qt based realtime application to magnify motion and color */
-/* Copyright (C) 2015  Jens Schindel <kontakt@jens-schindel.de> */
-/*                                                                                  */
-/* Based on the work of */
-/*      Joseph Pan      <https://github.com/wzpan/QtEVM> */
-/*      Nick D'Ademo    <https://github.com/nickdademo/qt-opencv-multithreaded>
- */
-/*                                                                                  */
-/* Realtime-Video-Magnification->Magnificator.cpp */
-/*                                                                                  */
-/* This program is free software: you can redistribute it and/or modify */
-/* it under the terms of the GNU General Public License as published by */
-/* the Free Software Foundation, either version 3 of the License, or */
-/* (at your option) any later version. */
-/*                                                                                  */
-/* This program is distributed in the hope that it will be useful, */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the */
-/* GNU General Public License for more details. */
-/*                                                                                  */
-/* You should have received a copy of the GNU General Public License */
-/* along with this program.  If not, see <http://www.gnu.org/licenses/>. */
-/************************************************************************************/
-
-#include "main/magnification/Magnificator.h"
+#include "Magnificator.h"
 #include <numbers>
 
 ////////////////////////
@@ -164,9 +139,9 @@ void Magnificator::laplaceMagnify() {
     // Convert input image to 32bit float
     pChannels = input.channels();
     if (!(imgProcFlags->grayscaleOn || pChannels <= 2)) {
-      // Convert color images to YCrCb
+      // Convert color images to Lab
       input.convertTo(input, CV_32FC3, 1.0 / 255.0f);
-      cvtColor(input, input, cv::COLOR_BGR2YCrCb);
+      cvtColor(input, input, cv::COLOR_BGR2Lab);
     } else
       input.convertTo(input, CV_32FC1, 1.0 / 255.0f);
 
@@ -221,8 +196,8 @@ void Magnificator::laplaceMagnify() {
 
     // Scale output image an convert back to 8bit unsigned
     if (!(imgProcFlags->grayscaleOn || pChannels <= 2)) {
-      // Convert YCrCb image back to BGR
-      cvtColor(output, output, cv::COLOR_YCrCb2BGR);
+      // Convert Lab image back to BGR
+      cvtColor(output, output, cv::COLOR_Lab2BGR);
       output.convertTo(output, CV_8UC3, 255.0, 1.0 / 255.0);
     } else
       output.convertTo(output, CV_8UC1, 255.0, 1.0 / 255.0);
@@ -238,6 +213,7 @@ void Magnificator::rieszMagnify() {
   // Magnify only when processing buffer holds new images
   if (currentFrame >= pBufferElements)
     return;
+
   // Number of levels in pyramid
   levels = imgProcSettings->levels;
 
@@ -256,84 +232,98 @@ void Magnificator::rieszMagnify() {
 
     // Convert input image to 32bit float
     pChannels = buffer_in.channels();
-    if (!(imgProcFlags->grayscaleOn || pChannels <= 2)) {
-      // Convert color images to YCrCb
-      buffer_in.convertTo(buffer_in, CV_32FC3, 1.0 / 255.0);
-      cvtColor(buffer_in, buffer_in, COLOR_BGR2YCrCb);
-      cv::split(buffer_in, channels);
-      input = channels[0];
-    } else {
-      buffer_in.convertTo(input, CV_32FC1, 1.0 / 255.0);
-    }
-
-    // If first frame ever, init pointer and init class
-    if (!(curPyr && oldPyr && loCutoff && hiCutoff)) {
-      curPyr.reset();
-      oldPyr.reset();
-      loCutoff.reset();
-      hiCutoff.reset();
-      // Pyramids
-      curPyr = std::shared_ptr<RieszPyramid>(new RieszPyramid());
-      oldPyr = std::shared_ptr<RieszPyramid>(new RieszPyramid());
-      curPyr->init(input, levels);
-      oldPyr->init(input, levels);
-      // Temporal Bandpass Filters, low and highpass (Butterworth)
-      loCutoff = std::shared_ptr<RieszTemporalFilter>(new RieszTemporalFilter(
-          imgProcSettings->coLow, imgProcSettings->framerate));
-      hiCutoff = std::shared_ptr<RieszTemporalFilter>(new RieszTemporalFilter(
-          imgProcSettings->coHigh, imgProcSettings->framerate));
-      loCutoff->computeCoefficients();
-      hiCutoff->computeCoefficients();
-    } else {
-      // Check if temporal filter setting was updated
-      // Update low and highpass butterworth filter coefficients if changed in
-      // GUI
-      if (loCutoff->itsFrequency != imgProcSettings->coLow) {
-        loCutoff->updateFrequency(imgProcSettings->coLow);
-      }
-      if (hiCutoff->itsFrequency != imgProcSettings->coHigh) {
-        hiCutoff->updateFrequency(imgProcSettings->coHigh);
+    if (pChannels > 1) {
+      // Convert color images to Lab
+      if (!(imgProcFlags->grayscaleOn || pChannels <= 2)) {
+        // Convert color images to Lab
+        buffer_in.convertTo(buffer_in, CV_32FC3, 1.0 / 255.0);
+        cvtColor(buffer_in, buffer_in, COLOR_BGR2Lab);
+        cv::split(buffer_in, channels);
+        input = channels[0];
+      } else {
+        buffer_in.convertTo(input, CV_32FC1, 1.0 / 255.0);
       }
 
-      /* 1. BUILD RIESZ PYRAMID */
-      curPyr->buildPyramid(input);
-      /* 2. UNWRAPE PHASE TO GET HORIZ&VERTICAL / SIN&COS */
-      curPyr->unwrapOrientPhase(*oldPyr);
-      // 3. BANDPASS FILTER ON EACH LEVEL
-      for (int lvl = 0; lvl < curPyr->numLevels - 1; ++lvl) {
-        loCutoff->pass(curPyr->pyrLevels[lvl].itsImagPass,
-                       curPyr->pyrLevels[lvl].itsPhase,
-                       oldPyr->pyrLevels[lvl].itsPhase);
+      // If first frame ever, init pointer and init class
+      if (currentFrame == 0 || isnan(loCutoff->itsA[0]) ||
+          isnan(hiCutoff->itsA[0])) {
+        curPyr.reset();
+        oldPyr.reset();
+        loCutoff.reset();
+        hiCutoff.reset();
+        // Pyramids
+        curPyr = std::make_shared<RieszPyramid>();
+        oldPyr = std::make_shared<RieszPyramid>();
+        curPyr->init(input, levels);
+        oldPyr->init(input, levels);
+        // Temporal Bandpass Filters, low and highpass (Butterworth)
+        loCutoff = std::make_shared<RieszTemporalFilter>(
+            imgProcSettings->coLow, imgProcSettings->framerate,
+            curPyr->getSizes());
+        hiCutoff = std::make_shared<RieszTemporalFilter>(
+            imgProcSettings->coHigh, imgProcSettings->framerate,
+            curPyr->getSizes());
+        loCutoff->computeCoefficients();
+        hiCutoff->computeCoefficients();
 
-        hiCutoff->pass(curPyr->pyrLevels[lvl].itsRealPass,
-                       curPyr->pyrLevels[lvl].itsPhase,
-                       oldPyr->pyrLevels[lvl].itsPhase);
+        // Make sure a valid frame is returned
+        input.copyTo(output);
+      } else {
+        // Check if temporal filter setting was updated
+        // Update low and highpass butterworth filter coefficients if changed in
+        // GUI
+        if (loCutoff->itsFrequency != imgProcSettings->coLow) {
+          loCutoff->updateFrequency(imgProcSettings->coLow);
+          loCutoff->resetMat();
+          hiCutoff->resetMat();
+          oldPyr->buildPyramid(input);
+        }
+        if (hiCutoff->itsFrequency != imgProcSettings->coHigh) {
+          hiCutoff->updateFrequency(imgProcSettings->coHigh);
+          hiCutoff->resetMat();
+          loCutoff->resetMat();
+          oldPyr->buildPyramid(input);
+        }
+
+        /* 1. BUILD RIESZ PYRAMID */
+        curPyr->buildPyramid(input);
+
+        /* 2. UNWRAPE PHASE TO GET HORIZ&VERTICAL / SIN&COS */
+        curPyr->computePhaseDifferenceAndAmplitude(*oldPyr);
+        // 3. BANDPASS FILTER ON EACH LEVEL
+        for (int lvl = 0; lvl < curPyr->numLevels - 1; ++lvl) {
+          loCutoff->IIRTemporalFilter(curPyr->pyrLevels[lvl].itsLowpassIIR,
+                                      curPyr->pyrLevels[lvl].itsPhaseDiff, lvl);
+          hiCutoff->IIRTemporalFilter(curPyr->pyrLevels[lvl].itsHighpassIIR,
+                                      curPyr->pyrLevels[lvl].itsPhaseDiff, lvl);
+        }
+
+        // Shift current to prior for next iteration
+        *oldPyr = *curPyr;
+
+        // 4. AMPLIFY MOTION
+        curPyr->amplify(imgProcSettings->amplification,
+                        imgProcSettings->coWavelength * PI_PERCENT);
+
+        /* 6. ADD MOTION TO ORIGINAL IMAGE */
+        if (!currentFrame == 0) {
+          magnified = curPyr->collapsePyramid();
+        } else {
+          magnified = input;
+        }
+
+        // Scale output image and convert back to 8bit unsigned
+        if (pChannels > 1) {
+          // Convert Lab image back to BGR
+          magnified.convertTo(channels[0], CV_32FC1);
+          cv::merge(channels, output);
+          cvtColor(output, output, cv::COLOR_Lab2BGR);
+          output.convertTo(output, CV_8UC3, 255.0, 1.0 / 255.0);
+        } else {
+          magnified.convertTo(output, CV_8UC1, 255.0, 1.0 / 255.0);
+        }
       }
-      // Shift current to prior for next iteration
-      *oldPyr = *curPyr;
-      // 4. AMPLIFY MOTION
-      curPyr->amplify(imgProcSettings->amplification,
-                      imgProcSettings->coWavelength * PI_PERCENT);
     }
-
-    /* 6. ADD MOTION TO ORIGINAL IMAGE */
-    if (currentFrame > 0) {
-      magnified = curPyr->collapsePyramid();
-    } else {
-      magnified = input;
-    }
-
-    // Scale output image and convert back to 8bit unsigned
-    if (!(imgProcFlags->grayscaleOn || pChannels <= 2)) {
-      // Convert YCrCb image back to BGR
-      channels[0] = magnified;
-      cv::merge(channels, output);
-      cvtColor(output, output, COLOR_YCrCb2BGR);
-      output.convertTo(output, CV_8UC3, 255.0, 1.0 / 255.0);
-    } else {
-      magnified.convertTo(output, CV_8UC1, 255.0, 1.0 / 255.0);
-    }
-
     // Fill internal buffer with magnified image
     magnifiedBuffer.push_back(output);
     ++currentFrame;

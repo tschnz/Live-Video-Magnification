@@ -1,36 +1,10 @@
-/************************************************************************************/
-/* An OpenCV/Qt based realtime application to magnify motion and color */
-/* Copyright (C) 2015  Jens Schindel <kontakt@jens-schindel.de> */
-/*                                                                                  */
-/* Based on the work of */
-/*      Joseph Pan      <https://github.com/wzpan/QtEVM> */
-/*      Nick D'Ademo    <https://github.com/nickdademo/qt-opencv-multithreaded>
- */
-/*                                                                                  */
-/* Realtime-Video-Magnification->TemporalFilter.cpp */
-/*                                                                                  */
-/* This program is free software: you can redistribute it and/or modify */
-/* it under the terms of the GNU General Public License as published by */
-/* the Free Software Foundation, either version 3 of the License, or */
-/* (at your option) any later version. */
-/*                                                                                  */
-/* This program is distributed in the hope that it will be useful, */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the */
-/* GNU General Public License for more details. */
-/*                                                                                  */
-/* You should have received a copy of the GNU General Public License */
-/* along with this program.  If not, see <http://www.gnu.org/licenses/>. */
-/************************************************************************************/
-
-#include "main/magnification/TemporalFilter.h"
-#include <numbers>
+#include "TemporalFilter.h"
 
 ////////////////////////
 /// Filter //////////////
 ////////////////////////
-void iirFilter(const Mat &src, Mat &dst, Mat &lowpassHi, Mat &lowpassLo,
-               double cutoffLo, double cutoffHi) {
+void iirFilter(const cv::Mat &src, cv::Mat &dst, cv::Mat &lowpassHi,
+               cv::Mat &lowpassLo, double cutoffLo, double cutoffHi) {
   // Set minimum for cutoff, so low cutoff gets faded out
   if (cutoffLo == 0)
     cutoffLo = 0.01;
@@ -41,72 +15,52 @@ void iirFilter(const Mat &src, Mat &dst, Mat &lowpassHi, Mat &lowpassLo,
    * faded out fast. The other way, a low cutoff evens out fast movements
    * ocurring only in a few number of src images. */
 
-  Mat tmp1 = (1 - cutoffHi) * lowpassHi + cutoffHi * src;
-  Mat tmp2 = (1 - cutoffLo) * lowpassLo + cutoffLo * src;
+  cv::Mat tmp1 = (1 - cutoffHi) * lowpassHi + cutoffHi * src;
+  cv::Mat tmp2 = (1 - cutoffLo) * lowpassLo + cutoffLo * src;
   lowpassHi = tmp1;
   lowpassLo = tmp2;
 
   dst = lowpassHi - lowpassLo;
 }
 
-void iirWaveletFilter(const vector<Mat> &src, vector<Mat> &dst,
-                      vector<Mat> &lowpassHi, vector<Mat> &lowpassLo,
-                      double cutoffLo, double cutoffHi) {
-  // Set minimum for cutoff, so low cutoff gets faded out
-  if (cutoffLo == 0)
-    cutoffLo = 0.01;
-
-  /* The higher cutoff*, the faster the lowpass* image of the lowpass* pyramid
-   * gets faded out. That means, a high cutoff weights new images (= \param src)
-   * more than the old ones (= \param lowpass*), so long lasting movements are
-   * faded out fast. The other way, a low cutoff evens out fast movements
-   * ocurring only in a few number of src images. */
-
-  // Do this for every detail/coefficient image
-  for (int dims = 0; dims < 3; dims++) {
-    Mat tmp1 = (1 - cutoffHi) * lowpassHi[dims] + cutoffHi * src[dims];
-    Mat tmp2 = (1 - cutoffLo) * lowpassLo[dims] + cutoffLo * src[dims];
-    lowpassHi[dims] = tmp1;
-    lowpassLo[dims] = tmp2;
-
-    dst[dims] = lowpassHi[dims] - lowpassLo[dims];
-  }
-}
-
-void idealFilter(const Mat &src, Mat &dst, double cutoffLo, double cutoffHi,
-                 double framerate) {
+////////////////////////
+/// Ideal Bandpass /////
+////////////////////////
+void idealFilter(const cv::Mat &src, cv::Mat &dst, double cutoffLo,
+                 double cutoffHi, double framerate) {
   if (cutoffLo == 0.00)
     cutoffLo += 0.01;
 
   int channelNrs = src.channels();
-  Mat *channels = new Mat[channelNrs];
+  cv::Mat *channels = new cv::Mat[channelNrs];
   split(src, channels);
 
   // Apply filter on each channel individually
   for (int curChannel = 0; curChannel < channelNrs; ++curChannel) {
-    Mat current = channels[curChannel];
-    Mat tempImg;
+    cv::Mat current = channels[curChannel];
+    cv::Mat tempImg;
 
     int width = current.cols;
-    int height = getOptimalDFTSize(current.rows);
+    int height = cv::getOptimalDFTSize(current.rows);
 
     copyMakeBorder(current, tempImg, 0, height - current.rows, 0,
-                   width - current.cols, BORDER_CONSTANT, Scalar::all(0));
+                   width - current.cols, cv::BORDER_CONSTANT,
+                   cv::Scalar::all(0));
 
     // DFT
-    dft(tempImg, tempImg, DFT_ROWS | DFT_SCALE);
+    dft(tempImg, tempImg, cv::DFT_ROWS | cv::DFT_SCALE);
 
     // construct Filter
-    Mat filter = tempImg.clone();
+    cv::Mat filter = tempImg.clone();
     createIdealBandpassFilter(filter, cutoffLo, cutoffHi, framerate);
 
     // apply
-    mulSpectrums(tempImg, filter, tempImg, DFT_ROWS);
+    mulSpectrums(tempImg, filter, tempImg, cv::DFT_ROWS);
 
     // inverse
-    idft(tempImg, tempImg, DFT_ROWS | DFT_SCALE);
+    idft(tempImg, tempImg, cv::DFT_ROWS | cv::DFT_SCALE);
 
-    tempImg(Rect(0, 0, current.cols, current.rows))
+    tempImg(cv::Rect(0, 0, current.cols, current.rows))
         .copyTo(channels[curChannel]);
   }
   merge(channels, channelNrs, dst);
@@ -115,8 +69,8 @@ void idealFilter(const Mat &src, Mat &dst, double cutoffLo, double cutoffHi,
   delete[] channels;
 }
 
-void createIdealBandpassFilter(Mat &filter, double cutoffLo, double cutoffHi,
-                               double framerate) {
+void createIdealBandpassFilter(cv::Mat &filter, double cutoffLo,
+                               double cutoffHi, double framerate) {
   float width = filter.cols;
   float height = filter.rows;
 
@@ -140,46 +94,8 @@ void createIdealBandpassFilter(Mat &filter, double cutoffLo, double cutoffHi,
 }
 
 ////////////////////////
-/// Helper //////////////
-////////////////////////
-void img2tempMat(const Mat &frame, Mat &dst, int maxImages) {
-  // Reshape in 1 column
-  Mat reshaped =
-      frame.reshape(frame.channels(), frame.cols * frame.rows).clone();
-
-  if (frame.channels() == 1)
-    reshaped.convertTo(reshaped, CV_32FC1);
-  else
-    reshaped.convertTo(reshaped, CV_32FC3);
-
-  // First frame
-  if (dst.cols == 0) {
-    reshaped.copyTo(dst);
-  }
-  // Later frames
-  else {
-    hconcat(dst, reshaped, dst);
-  }
-
-  // If dst reaches maximum, delete the first column (eg the oldest image)
-  if (dst.cols > maxImages && maxImages != 0) {
-    dst.colRange(1, dst.cols).copyTo(dst);
-  }
-}
-
-void tempMat2img(const Mat &src, int position, const Size &frameSize,
-                 Mat &frame) {
-  Mat line = src.col(position).clone();
-  frame = line.reshape(line.channels(), frameSize.height).clone();
-}
-
-////////////////////////
 /// Butterworth /////////
 ////////////////////////
-///
-// From https://github.com/tbl3rd/Pyramids
-///
-
 // An ordering on complex that lets real roots dominate.
 static bool sortComplex(std::complex<double> x, std::complex<double> y) {
   if (std::real(x) < std::real(y))
@@ -380,7 +296,7 @@ static void prototypeAnalogButterworth(unsigned N,
                                        double &gain) {
   static const std::complex<double> j = std::complex<double>(0, 1.0);
   for (unsigned k = 1; k < N + 1; ++k) {
-    poles.push_back(exp(j * (2.0 * k - 1) / (2.0 * N) * std::numbers::pi) * j);
+    poles.push_back(exp(j * (2.0 * k - 1) / (2.0 * N) * CV_PI) * j);
   }
   gain = 1.0;
   zeros.clear();
@@ -395,7 +311,7 @@ static void prototypeAnalogButterworth(unsigned N,
 void butterworth(unsigned int N, double Wn, std::vector<double> &out_a,
                  std::vector<double> &out_b) {
   static const double fs = 2.0;
-  const double w0 = 2.0 * fs * tan(std::numbers::pi * Wn / fs);
+  const double w0 = 2.0 * fs * tan(CV_PI * Wn / fs);
   std::vector<std::complex<double>> zeros, poles;
   double gain;
   prototypeAnalogButterworth(N, zeros, poles, gain);
@@ -414,6 +330,29 @@ void butterworth(unsigned int N, double Wn, std::vector<double> &out_a,
 //////////////////////////////////////////////////
 // Riesz Transform Butterworth Bandpass Filter //
 /////////////////////////////////////////////////
+RieszTemporalFilter::RieszTemporalFilter(
+    double frq, double fps, std::vector<std::pair<int, int>> lvlSizes)
+    : itsFrequency(frq), itsFramerate(fps), itsA(), itsB(),
+      numPyrLvls(lvlSizes.size()) {
+  itsRegister0.resize(lvlSizes.size());
+  itsRegister1.resize(lvlSizes.size());
+  itsPhase.resize(lvlSizes.size());
+  for (size_t lvl = 0; lvl < lvlSizes.size(); ++lvl) {
+    sin(itsRegister0[lvl]) =
+        cv::Mat::zeros(lvlSizes[lvl].first, lvlSizes[lvl].second, CV_32FC1);
+    cos(itsRegister0[lvl]) =
+        cv::Mat::zeros(lvlSizes[lvl].first, lvlSizes[lvl].second, CV_32FC1);
+    sin(itsRegister1[lvl]) =
+        cv::Mat::zeros(lvlSizes[lvl].first, lvlSizes[lvl].second, CV_32FC1);
+    cos(itsRegister1[lvl]) =
+        cv::Mat::zeros(lvlSizes[lvl].first, lvlSizes[lvl].second, CV_32FC1);
+    sin(itsPhase[lvl]) =
+        cv::Mat::zeros(lvlSizes[lvl].first, lvlSizes[lvl].second, CV_32FC1);
+    cos(itsPhase[lvl]) =
+        cv::Mat::zeros(lvlSizes[lvl].first, lvlSizes[lvl].second, CV_32FC1);
+  }
+}
+
 void RieszTemporalFilter::updateFrequency(double f) {
   this->itsFrequency = f;
   this->computeCoefficients();
@@ -425,10 +364,14 @@ void RieszTemporalFilter::updateFramerate(double framerate) {
 }
 void RieszTemporalFilter::computeCoefficients() {
   const double Wn = itsFrequency / (itsFramerate / 2.0);
-  butterworth(1, Wn, itsA, itsB);
+  butterworth(2, Wn, itsA, itsB);
 }
 void RieszTemporalFilter::passEach(cv::Mat &result, const cv::Mat &phase,
                                    const cv::Mat &prior) {
+
+  if (isnan(itsA[0]))
+    return;
+
   result = itsB[0] * phase + itsB[1] * prior - itsA[1] * result;
   result /= itsA[0];
   cv::patchNaNs(result, 0.0);
@@ -437,4 +380,77 @@ void RieszTemporalFilter::pass(CompExpMat &result, const CompExpMat &phase,
                                const CompExpMat &prior) {
   passEach(cos(result), cos(phase), cos(prior));
   passEach(sin(result), sin(phase), sin(prior));
+}
+
+// Temporally filters phase with IIR filter with coefficients B, A.
+// Given current phase value and value of previously computed registers,
+// comptues current temporally filtered phase value and updates registers.
+// Assumes filter given by B, A is first order IIR filter, so that
+// B and A have 3 coefficients each. Also, assumes A(1) = 1.
+// Computation is Direct Form Type II (See pages 388-390 of Oppenheim and
+// Schafer 3rd Ed.)
+void RieszTemporalFilter::IIRTemporalFilter(CompExpMat &result,
+                                            const CompExpMat &phaseDiff,
+                                            int lvl) {
+  assert((!isnan(itsA[0])) && "Invalid IIR filter coefficients");
+  // Adds the quaternionic phase difference to the current value of the
+  // quaternionic phase. Computing the current value of the phase in this way is
+  // equivalent to phase unwrapping.
+  this->itsPhase[lvl] += phaseDiff;
+
+  result = (this->itsPhase[lvl] * this->itsB[0]) + this->itsRegister0[lvl];
+
+  this->itsRegister0[lvl] = (this->itsPhase[lvl] * this->itsB[1]) +
+                            this->itsRegister1[lvl] - (result * this->itsA[1]);
+
+  this->itsRegister1[lvl] =
+      (this->itsPhase[lvl] * this->itsB[2]) - (result * this->itsA[2]);
+}
+
+void RieszTemporalFilter::resetMat() {
+  for (size_t lvl = 0; lvl < numPyrLvls; ++lvl) {
+    sin(itsRegister0[lvl]) = 0.f;
+    cos(itsRegister0[lvl]) = 0.f;
+    sin(itsRegister1[lvl]) = 0.f;
+    cos(itsRegister1[lvl]) = 0.f;
+    sin(itsPhase[lvl]) = 0.f;
+    cos(itsPhase[lvl]) = 0.f;
+  }
+}
+
+////////////////////////
+/// Helper //////////////
+////////////////////////
+void img2tempMat(const cv::Mat &frame, cv::Mat &dst, int maxImages) {
+  // Reshape in 1 column
+  cv::Mat reshaped =
+      frame.reshape(frame.channels(), frame.cols * frame.rows).clone();
+
+  if (!(frame.type() == CV_32F || frame.type() == CV_32FC1 ||
+        frame.type() == CV_32FC3)) {
+    if (frame.channels() == 1)
+      reshaped.convertTo(reshaped, CV_32FC1);
+    else
+      reshaped.convertTo(reshaped, CV_32FC3);
+  }
+
+  // First frame
+  if (dst.cols == 0) {
+    reshaped.copyTo(dst);
+  }
+  // Later frames
+  else {
+    hconcat(dst, reshaped, dst);
+  }
+
+  // If dst reaches maximum, delete the first column (eg the oldest image)
+  if (dst.cols > maxImages && maxImages > 0) {
+    dst.colRange(1, dst.cols).copyTo(dst);
+  }
+}
+
+void tempMat2img(const cv::Mat &src, int position, const cv::Size &frameSize,
+                 cv::Mat &frame) {
+  cv::Mat line = src.col(position).clone();
+  frame = line.reshape(line.channels(), frameSize.height).clone();
 }
