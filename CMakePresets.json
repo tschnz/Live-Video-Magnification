@@ -1,5 +1,5 @@
 {
-    "version": 2,
+    "version": 3,
     "configurePresets": [
         {
             "name": "ninja-nmc",
@@ -8,10 +8,11 @@
             "binaryDir": "${sourceDir}/build",
             "cacheVariables": {
                 "CMAKE_PREFIX_PATH": "C:/Qt/6.8.0/msvc2022_64",
-                "CMAKE_MAKE_PROGRAM": "C:/Qt/Tools/Ninja/ninja.exe"
+                "CMAKE_MAKE_PROGRAM": "C:/Qt/Tools/Ninja/ninja.exe",
+                "OpenCV_DIR": "C:/opencv/build"
             },
             "environment": {
-                "PATH": "C:/Qt/6.8.0/msvc2022_64/bin;C:/Workspace/Programs/opencv/build/x64/vc16/bin;$penv{PATH}"
+                "PATH": "C:/Qt/6.8.0/msvc2022_64/bin;C:/opencv/build/x64/vc16/bin;$penv{PATH}"
             }
         }
     ],
@@ -21,12 +22,6 @@
             "displayName": "Ninja Debug",
             "configurePreset": "ninja-nmc",
             "configuration": "Debug"
-        },
-        {
-            "name": "relwithdeb",
-            "displayName": "Ninja RelWithDeb",
-            "configurePreset": "ninja-nmc",
-            "configuration": "RelWithDeb"
         },
         {
             "name": "release",

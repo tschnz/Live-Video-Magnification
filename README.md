@@ -6,15 +6,23 @@ An OpenCV/Qt based realtime application for Eulerian Video Magnification. Works 
 
 *Image shows the color magnified output for a video. In the pictures you can see the effects of the cardiac cycle on the skins color. The upper image shows the skin of the face during a diastole, the lower one during a ventricular systole of the cycle.*
 
-
-
 ![Motion Magnified Camerastream](pictures/j_motion-cam.png)
 
 *(Un-)Wanted artifacts from a realtime motion magnified camerastream. The strong b/w areas around torso and head are resulting from a fast backwards movement and excessive amplification. The white points (the ones bigger than the noise) on the left side are awhirled dust particles, not visible in the original camera source.*
+## Building
+- Install [Qt](http://qt-project.org/) >= 6
+- Download precompiled OpenCV binaries or compile OpenCV >= 4 yourself
+- In CMakePresets.json
+    - Set CMAKE_PREFIX_PATH to the Qt installation directory which should be the same compiler as your OpenCV binaries
+    - Set CMAKE_MAKE_PROGRAM to the generator of your choice, Ninja is recommended
+    - Set OpenCV_DIR to the directory where the OpenCVConfig.cmake is located 
+    - Append the path to the OpenCV and Qt binaries to the PATH variable 
+
+I only tested this on Windows, so if building it with VSCode and using pre-built OpenCV, make sure to install all VSCode Qt Extensions and set User Preferences > CMake: Use VS Developer Environment to "always".
 
 ### Dependencies
-- [Qt](http://qt-project.org/) >= 5.0
-- [OpenCV](http://opencv.org/) >= 2.0 (< 3.0 ? -> not tested yet)
+- [Qt](http://qt-project.org/) >= 6
+- [OpenCV](http://opencv.org/) >= 4
 
 ### License
 This application is licensed under GPLv3, read the [LICENSE](LICENSE).

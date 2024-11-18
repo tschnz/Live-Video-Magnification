@@ -5,15 +5,23 @@ project(LiveVideoMagnification VERSION 1.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# OpenCV Setup
+find_package(OpenCV QUIET)
+if(NOT OpenCV_FOUND)
+    if(NOT OpenCV_DIR)
+        message(FATAL_ERROR "OpenCV not found and OpenCV_DIR is not set. Please specify the path to the OpenCV build directory.")
+    else()
+        find_package(OpenCV REQUIRED PATHS ${OpenCV_DIR} NO_DEFAULT_PATH)
+        if(NOT OpenCV_FOUND)
+            message(FATAL_ERROR "OpenCV not found in the specified OpenCV_DIR: ${OpenCV_DIR}")
+        endif()
+    endif()
+endif()
+
 # Qt6 Setup
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 qt6_standard_project_setup()
 set(CMAKE_AUTOUIC OFF)
-
-# OpenCV Setup
-set(OpenCV_DIR "C:/Workspace/Programs/opencv/build")
-find_package(OpenCV REQUIRED)
-include_directories(${OpenCV_INCLUDE_DIRS})
 
 # Include paths
 include_directories(
@@ -79,6 +87,7 @@ set(UI_FILES
 qt_add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS} ${UI_FILES})
 qt6_add_ui(${PROJECT_NAME} SOURCES ${UI_FILES})
 
+target_include_directories(${PROJECT_NAME} PRIVATE ${OpenCV_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets ${OpenCV_LIBS})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
