@@ -18,11 +18,7 @@ An OpenCV/Qt based realtime application for Eulerian Video Magnification. Works 
     - Set OpenCV_DIR to the directory where the OpenCVConfig.cmake is located 
     - Append the path to the OpenCV and Qt binaries to the PATH variable 
 
-I only tested this on Windows, so if building it with VSCode and using pre-built OpenCV, make sure to install all VSCode Qt Extensions and set User Preferences > CMake: Use VS Developer Environment to "always".
-
-### Dependencies
-- [Qt](http://qt-project.org/) >= 6
-- [OpenCV](http://opencv.org/) >= 4
+I only tested this on Windows with VSCode. Make sure to install Qt msvc2022 and Tools, use pre-built OpenCV 4.10 from their website, make sure to install all VSCode Qt Extensions and set User Preferences > CMake: Use VS Developer Environment to "always".
 
 ### License
 This application is licensed under GPLv3, read the [LICENSE](LICENSE).
