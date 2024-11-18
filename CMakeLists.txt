@@ -94,8 +94,3 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     WIN32_EXECUTABLE ON
     MACOSX_BUNDLE ON
 )
-
-install(
-    TARGETS ${PROJECT_NAME}
-    BUNDLE DESTINATION /Applications
-)
