@@ -23,7 +23,7 @@ MainWindow::MainWindow(QWidget *parent)
           SLOT(disconnectCamera(int)));
   // Set focus on button
   connectToCameraButton->setFocus();
-  connectToCameraButton->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_O));
+  connectToCameraButton->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_O));
   // Connect other signals/slots
   connect(ui->actionAbout, SIGNAL(triggered()), this, SLOT(showAboutDialog()));
   connect(ui->actionHelp, SIGNAL(triggered()), this, SLOT(showHelpDialog()));

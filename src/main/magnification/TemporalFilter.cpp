@@ -369,7 +369,7 @@ void RieszTemporalFilter::computeCoefficients() {
 void RieszTemporalFilter::passEach(cv::Mat &result, const cv::Mat &phase,
                                    const cv::Mat &prior) {
 
-  if (isnan(itsA[0]))
+  if (std::isnan(itsA[0]))
     return;
 
   result = itsB[0] * phase + itsB[1] * prior - itsA[1] * result;

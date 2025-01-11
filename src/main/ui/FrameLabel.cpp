@@ -60,7 +60,7 @@ void FrameLabel::mouseReleaseEvent(QMouseEvent *ev) {
       drawBox = false;
     else {
       // Show context menu
-      menu->exec(ev->globalPos());
+      menu->exec(ev->globalPosition().toPoint());
     }
   }
 }
