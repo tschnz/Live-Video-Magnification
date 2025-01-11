@@ -392,7 +392,7 @@ void RieszTemporalFilter::pass(CompExpMat &result, const CompExpMat &phase,
 void RieszTemporalFilter::IIRTemporalFilter(CompExpMat &result,
                                             const CompExpMat &phaseDiff,
                                             int lvl) {
-  assert((!isnan(itsA[0])) && "Invalid IIR filter coefficients");
+  assert((!std::isnan(itsA[0])) && "Invalid IIR filter coefficients");
   // Adds the quaternionic phase difference to the current value of the
   // quaternionic phase. Computing the current value of the phase in this way is
   // equivalent to phase unwrapping.
