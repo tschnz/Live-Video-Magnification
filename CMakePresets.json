@@ -3,7 +3,6 @@
     "configurePresets": [
         {
             "name": "ninja-nmc-base",
-            "displayName": "Ninja Base",
             "hidden": true,
             "generator": "Ninja Multi-Config",
             "binaryDir": "${sourceDir}/build/${presetName}",
@@ -13,7 +12,6 @@
         },
         {
             "name": "msvc-base",
-            "displayName": "MSVC Base",
             "hidden": true,
             "inherits": "ninja-nmc-base",
             "cacheVariables": {
@@ -26,7 +24,6 @@
         },
         {
             "name": "mingw-base",
-            "displayName": "MinGW Base",
             "hidden": true,
             "inherits": "ninja-nmc-base",
             "cacheVariables": {
