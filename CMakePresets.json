@@ -5,34 +5,17 @@
             "name": "ninja-nmc-base",
             "displayName": "Ninja Base",
             "hidden": true,
-            "generator": "Ninja",
+            "generator": "Ninja Multi-Config",
             "binaryDir": "${sourceDir}/build/${presetName}",
             "cacheVariables": {
                 "CMAKE_MAKE_PROGRAM": "C:/Qt/Tools/Ninja/ninja.exe"
             }
         },
         {
-            "name": "debug-base",
-            "displayName": "Debug Base",
+            "name": "msvc-base",
+            "displayName": "MSVC Base",
             "hidden": true,
             "inherits": "ninja-nmc-base",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug"
-            }
-        },
-        {
-            "name": "release-base",
-            "displayName": "Release Base",
-            "hidden": true,
-            "inherits": "ninja-nmc-base",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
-            }
-        },
-        {
-            "name": "msvc-debug",
-            "displayName": "MSVC Debug",
-            "inherits": "debug-base",
             "cacheVariables": {
                 "CMAKE_PREFIX_PATH": "C:/Qt/6.8.1/msvc2022_64",
                 "OpenCV_DIR": "C:/opencv/build"
@@ -42,21 +25,10 @@
             }
         },
         {
-            "name": "msvc-release",
-            "displayName": "MSVC Release",
-            "inherits": "release-base",
-            "cacheVariables": {
-                "CMAKE_PREFIX_PATH": "C:/Qt/6.8.1/msvc2022_64",
-                "OpenCV_DIR": "C:/opencv/build"
-            },
-            "environment": {
-                "PATH": "C:/Qt/6.8.1/msvc2022_64/bin;C:/opencv/build/x64/vc16/bin;$penv{PATH}"
-            }
-        },
-        {
-            "name": "mingw-debug",
-            "displayName": "MinGW Debug",
-            "inherits": "debug-base",
+            "name": "mingw-base",
+            "displayName": "MinGW Base",
+            "hidden": true,
+            "inherits": "ninja-nmc-base",
             "cacheVariables": {
                 "CMAKE_PREFIX_PATH": "C:/Qt/6.8.1/mingw_64",
                 "OpenCV_DIR": "C:/OpenCV-MinGW-Build-OpenCV-4.5.5-x64",
@@ -68,36 +40,36 @@
             }
         },
         {
-            "name": "mingw-release",
-            "displayName": "MinGW Release",
-            "inherits": "release-base",
-            "cacheVariables": {
-                "CMAKE_PREFIX_PATH": "C:/Qt/6.8.1/mingw_64",
-                "OpenCV_DIR": "C:/OpenCV-MinGW-Build-OpenCV-4.5.5-x64",
-                "CMAKE_C_COMPILER": "C:/mingw64/bin/gcc.exe",
-                "CMAKE_CXX_COMPILER": "C:/mingw64/bin/g++.exe"
-            },
-            "environment": {
-                "PATH": "C:/Qt/6.8.1/mingw_64/bin;C:/OpenCV-MinGW-Build-OpenCV-4.5.5-x64/x64/mingw/bin;C:/mingw64/bin;$penv{PATH}"
-            }
+            "name": "msvc",
+            "displayName": "MSVC",
+            "inherits": "msvc-base"
+        },
+        {
+            "name": "mingw",
+            "displayName": "MinGW",
+            "inherits": "mingw-base"
         }
     ],
     "buildPresets": [
         {
             "name": "msvc-debug",
-            "configurePreset": "msvc-debug"
+            "configurePreset": "msvc",
+            "configuration": "Debug"
         },
         {
             "name": "msvc-release",
-            "configurePreset": "msvc-release"
+            "configurePreset": "msvc",
+            "configuration": "RelWithDebInfo"
         },
         {
             "name": "mingw-debug",
-            "configurePreset": "mingw-debug"
+            "configurePreset": "mingw",
+            "configuration": "Debug"
         },
         {
             "name": "mingw-release",
-            "configurePreset": "mingw-release"
+            "configurePreset": "mingw",
+            "configuration": "RelWithDebInfo"
         }
     ]
 }
