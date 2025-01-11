@@ -54,21 +54,25 @@
         {
             "name": "msvc-debug",
             "configurePreset": "msvc",
+            "displayName": "Debug",
             "configuration": "Debug"
         },
         {
             "name": "msvc-release",
             "configurePreset": "msvc",
+            "displayName": "Release",
             "configuration": "RelWithDebInfo"
         },
         {
             "name": "mingw-debug",
             "configurePreset": "mingw",
+            "displayName": "Debug",
             "configuration": "Debug"
         },
         {
             "name": "mingw-release",
             "configurePreset": "mingw",
+            "displayName": "Release",
             "configuration": "RelWithDebInfo"
         }
     ]
