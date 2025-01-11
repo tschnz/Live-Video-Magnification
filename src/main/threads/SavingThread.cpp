@@ -1,4 +1,4 @@
-#include "SavingThread.h "
+#include "SavingThread.h"
 
 // Constructor
 SavingThread::SavingThread() : QThread() {

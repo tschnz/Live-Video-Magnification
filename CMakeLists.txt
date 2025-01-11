@@ -1,8 +1,8 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.21)
 
 project(LiveVideoMagnification VERSION 1.0 LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # OpenCV Setup
@@ -20,7 +20,7 @@ endif()
 
 # Qt6 Setup
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
-qt6_standard_project_setup()
+qt_standard_project_setup()
 set(CMAKE_AUTOUIC OFF)
 
 # Include paths
@@ -85,9 +85,9 @@ set(UI_FILES
 )
 
 qt_add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS} ${UI_FILES})
-qt6_add_ui(${PROJECT_NAME} SOURCES ${UI_FILES})
+qt_add_ui(${PROJECT_NAME} SOURCES ${UI_FILES})
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${OpenCV_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} PRIVATE ${OpenCV_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/src/main/ui)
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets ${OpenCV_LIBS})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES

@@ -1,33 +1,103 @@
 {
-    "version": 3,
+    "version": 10,
     "configurePresets": [
         {
-            "name": "ninja-nmc",
-            "displayName": "Ninja Multi-Config Qt",
-            "generator": "Ninja Multi-Config",
-            "binaryDir": "${sourceDir}/build",
+            "name": "ninja-nmc-base",
+            "displayName": "Ninja Base",
+            "hidden": true,
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
             "cacheVariables": {
-                "CMAKE_PREFIX_PATH": "C:/Qt/6.8.0/msvc2022_64",
-                "CMAKE_MAKE_PROGRAM": "C:/Qt/Tools/Ninja/ninja.exe",
+                "CMAKE_MAKE_PROGRAM": "C:/Qt/Tools/Ninja/ninja.exe"
+            }
+        },
+        {
+            "name": "debug-base",
+            "displayName": "Debug Base",
+            "hidden": true,
+            "inherits": "ninja-nmc-base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "release-base",
+            "displayName": "Release Base",
+            "hidden": true,
+            "inherits": "ninja-nmc-base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+            }
+        },
+        {
+            "name": "msvc-debug",
+            "displayName": "MSVC Debug",
+            "inherits": "debug-base",
+            "cacheVariables": {
+                "CMAKE_PREFIX_PATH": "C:/Qt/6.8.1/msvc2022_64",
                 "OpenCV_DIR": "C:/opencv/build"
             },
             "environment": {
-                "PATH": "C:/Qt/6.8.0/msvc2022_64/bin;C:/opencv/build/x64/vc16/bin;$penv{PATH}"
+                "PATH": "C:/Qt/6.8.1/msvc2022_64/bin;C:/opencv/build/x64/vc16/bin;$penv{PATH}"
+            }
+        },
+        {
+            "name": "msvc-release",
+            "displayName": "MSVC Release",
+            "inherits": "release-base",
+            "cacheVariables": {
+                "CMAKE_PREFIX_PATH": "C:/Qt/6.8.1/msvc2022_64",
+                "OpenCV_DIR": "C:/opencv/build"
+            },
+            "environment": {
+                "PATH": "C:/Qt/6.8.1/msvc2022_64/bin;C:/opencv/build/x64/vc16/bin;$penv{PATH}"
+            }
+        },
+        {
+            "name": "mingw-debug",
+            "displayName": "MinGW Debug",
+            "inherits": "debug-base",
+            "cacheVariables": {
+                "CMAKE_PREFIX_PATH": "C:/Qt/6.8.1/mingw_64",
+                "OpenCV_DIR": "C:/OpenCV-MinGW-Build-OpenCV-4.5.5-x64",
+                "CMAKE_C_COMPILER": "C:/mingw64/bin/gcc.exe",
+                "CMAKE_CXX_COMPILER": "C:/mingw64/bin/g++.exe"
+            },
+            "environment": {
+                "PATH": "C:/Qt/6.8.1/mingw_64/bin;C:/OpenCV-MinGW-Build-OpenCV-4.5.5-x64/x64/mingw/bin;C:/mingw64/bin;$penv{PATH}"
+            }
+        },
+        {
+            "name": "mingw-release",
+            "displayName": "MinGW Release",
+            "inherits": "release-base",
+            "cacheVariables": {
+                "CMAKE_PREFIX_PATH": "C:/Qt/6.8.1/mingw_64",
+                "OpenCV_DIR": "C:/OpenCV-MinGW-Build-OpenCV-4.5.5-x64",
+                "CMAKE_C_COMPILER": "C:/mingw64/bin/gcc.exe",
+                "CMAKE_CXX_COMPILER": "C:/mingw64/bin/g++.exe"
+            },
+            "environment": {
+                "PATH": "C:/Qt/6.8.1/mingw_64/bin;C:/OpenCV-MinGW-Build-OpenCV-4.5.5-x64/x64/mingw/bin;C:/mingw64/bin;$penv{PATH}"
             }
         }
     ],
     "buildPresets": [
         {
-            "name": "debug",
-            "displayName": "Ninja Debug",
-            "configurePreset": "ninja-nmc",
-            "configuration": "Debug"
+            "name": "msvc-debug",
+            "configurePreset": "msvc-debug"
         },
         {
-            "name": "release",
-            "displayName": "Ninja Release",
-            "configurePreset": "ninja-nmc",
-            "configuration": "Release"
+            "name": "msvc-release",
+            "configurePreset": "msvc-release"
+        },
+        {
+            "name": "mingw-debug",
+            "configurePreset": "mingw-debug"
+        },
+        {
+            "name": "mingw-release",
+            "configurePreset": "mingw-release"
         }
     ]
 }
