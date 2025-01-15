@@ -1,0 +1,118 @@
+{
+    "version": 10,
+    "configurePresets": [
+        {
+            "name": "ninja-nmc-base",
+            "hidden": true,
+            "generator": "Ninja Multi-Config",
+            "binaryDir": "${sourceDir}/build/${presetName}"
+        },
+        {
+            "name": "windows-msvc-base",
+            "hidden": true,
+            "inherits": "ninja-nmc-base",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            },
+            "cacheVariables": {
+                "CMAKE_MAKE_PROGRAM": "C:/Qt/Tools/Ninja/ninja.exe",
+                "CMAKE_PREFIX_PATH": "C:/Qt/6.8.1/msvc2022_64",
+                "OpenCV_DIR": "C:/opencv/build"
+            },
+            "environment": {
+                "PATH": "C:/Qt/6.8.1/msvc2022_64/bin;C:/opencv/build/x64/vc16/bin;$penv{PATH}"
+            }
+        },
+        {
+            "name": "windows-mingw-base",
+            "hidden": true,
+            "inherits": "ninja-nmc-base",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            },
+            "cacheVariables": {
+                "CMAKE_MAKE_PROGRAM": "C:/Qt/Tools/Ninja/ninja.exe",
+                "CMAKE_PREFIX_PATH": "C:/Qt/6.8.1/mingw_64",
+                "OpenCV_DIR": "C:/OpenCV-MinGW-Build-OpenCV-4.5.5-x64",
+                "CMAKE_C_COMPILER": "C:/mingw64/bin/gcc.exe",
+                "CMAKE_CXX_COMPILER": "C:/mingw64/bin/g++.exe"
+            },
+            "environment": {
+                "PATH": "C:/Qt/6.8.1/mingw_64/bin;C:/OpenCV-MinGW-Build-OpenCV-4.5.5-x64/x64/mingw/bin;C:/mingw64/bin;$penv{PATH}"
+            }
+        },
+        {
+            "name": "linux-base",
+            "hidden": true,
+            "inherits": "ninja-nmc-base",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            },
+            "cacheVariables": {
+                "CMAKE_PREFIX_PATH": "/usr/lib/qt6",
+                "OpenCV_DIR": "/usr/local/share/opencv4",
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++"
+            }
+        },
+        {
+            "name": "msvc",
+            "displayName": "Windows MSVC",
+            "inherits": "windows-msvc-base"
+        },
+        {
+            "name": "mingw",
+            "displayName": "Windows MinGW",
+            "inherits": "windows-mingw-base"
+        },
+        {
+            "name": "linux",
+            "displayName": "Linux GCC",
+            "inherits": "linux-base"
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "msvc-debug",
+            "configurePreset": "msvc",
+            "displayName": "Debug",
+            "configuration": "Debug"
+        },
+        {
+            "name": "msvc-release",
+            "configurePreset": "msvc",
+            "displayName": "Release",
+            "configuration": "RelWithDebInfo"
+        },
+        {
+            "name": "mingw-debug",
+            "configurePreset": "mingw",
+            "displayName": "Debug",
+            "configuration": "Debug"
+        },
+        {
+            "name": "mingw-release",
+            "configurePreset": "mingw",
+            "displayName": "Release",
+            "configuration": "RelWithDebInfo"
+        },
+        {
+            "name": "linux-debug",
+            "configurePreset": "linux",
+            "displayName": "Debug",
+            "configuration": "Debug"
+        },
+        {
+            "name": "linux-release",
+            "configurePreset": "linux",
+            "displayName": "Release",
+            "configuration": "RelWithDebInfo"
+        }
+    ]
+}
