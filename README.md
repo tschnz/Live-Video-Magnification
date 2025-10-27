@@ -1,4 +1,7 @@
 # Live Motion Magnification
+
+This was my Bachelor thesis back in 2015. It's more of a zombie project I keep reviving from time to time with new build systems. If I get bored I might overhaul it...or at least make it crash less.
+
 An OpenCV/Qt based realtime application for Eulerian Video Magnification. Works with multiple videos and cameras at the same time and let's you export the magnified videos.
 
 ## Examples
