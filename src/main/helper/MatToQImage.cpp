@@ -3,36 +3,36 @@
 #include <QDebug>
 
 QImage MatToQImage(const cv::Mat& mat) {
+
+    QImage::Format format = QImage::Format_Invalid;
     switch (mat.type()) {
-        // 8-bit, 4 channel
-        case CV_8UC4: {
-            QImage img(mat.data, mat.cols, mat.rows, 
-                      static_cast<int>(mat.step), 
-                      QImage::Format_ARGB32);
-            return img.copy();
-        }
-        
-        // 8-bit, 3 channel
-        case CV_8UC3: {
-            QImage img(mat.data, mat.cols, mat.rows, 
-                      static_cast<int>(mat.step), 
-                      QImage::Format_RGB888);
-            return img.rgbSwapped(); // BGR to RGB
-        }
-        
-        // 8-bit, 1 channel
-        case CV_8UC1: {
-            QImage img(mat.data, mat.cols, mat.rows, 
-                      static_cast<int>(mat.step), 
-                      QImage::Format_Grayscale8);
-            return img.copy();
-        }
-        
-        default:
-            qWarning("matToQImage() - cv::Mat type not handled: %d", mat.type());
+        case CV_8UC4:
+            format = QImage::Format_RGBA8888;
             break;
-    }
-    
-    return QImage();
+        case CV_8UC3: 
+            format = QImage::Format_BGR888;
+            break;
+        case CV_8UC1:
+            format = QImage::Format_Grayscale8;
+            break;
+        case CV_32FC1:
+        {
+            // Normalize the float values to the range [0, 255]
+            cv::Mat normalizedMat;
+            cv::normalize(mat, normalizedMat, 0, 255, cv::NORM_MINMAX);
+            normalizedMat.convertTo(normalizedMat, CV_8UC1);
+            return QImage(normalizedMat.data, normalizedMat.cols, normalizedMat.rows,
+                          static_cast<int>(normalizedMat.step),
+                          QImage::Format_Grayscale8).copy();
+            break;
+        }
+        default:
+            qWarning() << "MatToQImage: Unsupported Mat type:" << mat.type();
+            return QImage();
+        }
+
+    return QImage(mat.data, mat.cols, mat.rows,
+                static_cast<int>(mat.step),
+                format).copy();
 }
 

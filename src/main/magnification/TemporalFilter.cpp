@@ -176,13 +176,14 @@ zerosPolesToTransferCoefficients(std::vector<std::complex<double>> zeros,
 //
 static void normalize(std::vector<std::complex<double>> &b,
                       std::vector<std::complex<double>> &a) {
-  while (a.front() == 0.0 && a.size() > 1)
-    a.erase(a.begin());
+  // while (a.front() == 0.0 && a.size() > 1)
+  //   a.erase(a.begin());
   const std::complex<double> leading_coeff = a.front();
+
   for (unsigned int k = 0; k < a.size(); ++k)
-    a[k] /= leading_coeff;
+    a[k] = (leading_coeff == 0.0) ? 0.0 : a[k] / leading_coeff;
   for (unsigned int k = 0; k < b.size(); ++k)
-    b[k] /= leading_coeff;
+    b[k] = (leading_coeff == 0.0) ? 0.0 : b[k] / leading_coeff;
 }
 
 // Return the binomial coefficient: n choose k.
@@ -265,22 +266,24 @@ static void toLowpass(std::vector<std::complex<double>> &b,
     pwo.push_back(pow(w0, double(k)));
   unsigned int k;
   for (k = start2; k < pwo.size() && k - start2 < b.size(); ++k) {
+    if(pwo[k] == 0.0) {
+      b[k - start2] = 0.0;
+      continue;
+    }
+
     b[k - start2] *=
         std::complex<double>(pwo[start1]) / std::complex<double>(pwo[k]);
-    if (std::isnan(std::abs(b[k - start2])) ||
-        std::isinf(std::abs(b[k - start2]))) {
-      b[k - start2] = std::complex<double>(0.0);
-    }
   }
 
+
   for (k = start1; k < pwo.size() && k - start1 < a.size(); ++k) {
+    if(pwo[k] == 0.0) {
+      a[k - start1] = 0.0;
+      continue;
+    }
+
     a[k - start1] *=
         std::complex<double>(pwo[start1]) / std::complex<double>(pwo[k]);
-
-    if (std::isnan(std::abs(a[k - start1])) ||
-        std::isinf(std::abs(a[k - start1]))) {
-      a[k - start1] = std::complex<double>(0.0);
-    }
   }
 
   normalize(b, a);
@@ -363,18 +366,13 @@ void RieszTemporalFilter::updateFramerate(double framerate) {
   this->computeCoefficients();
 }
 void RieszTemporalFilter::computeCoefficients() {
-  const double Wn = itsFrequency / (itsFramerate / 2.0);
+  const double Wn = itsFramerate == 0.0 ? 0.0 : itsFrequency / (itsFramerate / 2.0);
   butterworth(2, Wn, itsA, itsB);
 }
 void RieszTemporalFilter::passEach(cv::Mat &result, const cv::Mat &phase,
                                    const cv::Mat &prior) {
-
-  if (std::isnan(itsA[0]))
-    return;
-
   result = itsB[0] * phase + itsB[1] * prior - itsA[1] * result;
-  result /= itsA[0];
-  cv::patchNaNs(result, 0.0);
+  result = (itsA[0] == 0) ? cv::Mat() : result / itsA[0];
 }
 void RieszTemporalFilter::pass(CompExpMat &result, const CompExpMat &phase,
                                const CompExpMat &prior) {
@@ -392,7 +390,6 @@ void RieszTemporalFilter::pass(CompExpMat &result, const CompExpMat &phase,
 void RieszTemporalFilter::IIRTemporalFilter(CompExpMat &result,
                                             const CompExpMat &phaseDiff,
                                             int lvl) {
-  assert((!std::isnan(itsA[0])) && "Invalid IIR filter coefficients");
   // Adds the quaternionic phase difference to the current value of the
   // quaternionic phase. Computing the current value of the phase in this way is
   // equivalent to phase unwrapping.

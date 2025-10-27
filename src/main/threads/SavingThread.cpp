@@ -1,4 +1,5 @@
 #include "SavingThread.h"
+#include <opencv2/core/hal/interface.h>
 
 // Constructor
 SavingThread::SavingThread() : QThread() {
@@ -89,6 +90,22 @@ void SavingThread::run() {
       processingBuffer.erase(processingBuffer.begin());
     }
     currentWriteIndex++;
+
+    if(processedFrame.type() == CV_32FC1)
+    {
+        cv::Mat normalizedMat;
+        cv::normalize(processedFrame, normalizedMat, 0, 255, cv::NORM_MINMAX);
+        normalizedMat.convertTo(normalizedMat, CV_8UC1);
+        processedFrame = normalizedMat;
+    }
+    else if(processedFrame.type() == CV_32FC3)
+    {
+        cv::Mat normalizedMat;
+        cv::normalize(processedFrame, normalizedMat, 0, 255, cv::NORM_MINMAX);
+        normalizedMat.convertTo(normalizedMat, CV_8UC3);
+        processedFrame = normalizedMat;
+    }
+
 
     // Combine Frames
     if (captureOriginal) {
