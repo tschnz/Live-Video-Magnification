@@ -4,7 +4,7 @@
 #include <QtCore/QElapsedTimer>
 #include <QtCore/QThread>
 // OpenCV
-#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/opencv.hpp>
 // Local
 #include "../helper/SharedImageBuffer.h"
 #include "../other/Config.h"

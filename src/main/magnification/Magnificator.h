@@ -5,10 +5,7 @@
 #include "QTime"
 #include <qdebug.h>
 // OpenCV
-#include "opencv2/core/core.hpp"
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
-#include "opencv2/opencv.hpp"
+#include <opencv2/opencv.hpp>
 // Local
 #include "../other/Config.h"
 #include "../other/Structures.h"
@@ -160,11 +157,11 @@ private:
    * \brief currentFrame Current image that is written in magnified buffer.
    *  0 <= currentFrame < magnifiedBuffer.size().
    */
-  int currentFrame;
+  size_t currentFrame;
   /*!
    * \brief levels Number of levels for Laplace/Gauss Pyramid.
    */
-  int levels;
+  size_t levels;
 
   ////////////////////////
   /// Cache ///////// ///////

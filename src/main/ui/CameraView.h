@@ -28,17 +28,17 @@ public:
   void setCodec(int codec);
 
 private:
-  Ui::CameraView *ui;
-  ProcessingThread *processingThread;
-  CaptureThread *captureThread;
-  SharedImageBuffer *sharedImageBuffer;
+  Ui::CameraView *ui = nullptr;
+  ProcessingThread *processingThread = nullptr;
+  CaptureThread *captureThread = nullptr;
+  SharedImageBuffer *sharedImageBuffer = nullptr;
   ImageProcessingFlags imageProcessingFlags;
   void stopCaptureThread();
   void stopProcessingThread();
   int deviceNumber;
   bool isCameraConnected;
-  MagnifyOptions *magnifyOptionsTab;
-  FrameLabel *originalFrame;
+  MagnifyOptions *magnifyOptionsTab = nullptr;
+  FrameLabel *originalFrame = nullptr;
   void handleOriginalWindow(bool doEmit);
   QString getFormattedTime(int timeInMSeconds);
   int codec;

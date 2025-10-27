@@ -30,5 +30,7 @@ Makefile*
 
 # Build
 build/
+compile_commands.json
 
 .vscode/
+.cache/

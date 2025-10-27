@@ -57,11 +57,17 @@ VideoView::~VideoView() {
       qDebug() << "[" << filename << "] WARNING: Video already released.";
   }
   // Delete Threads
-  delete playerThread;
-  delete vidSaver;
+  if (playerThread)
+    delete playerThread;
+  
+  if (vidSaver)
+    delete vidSaver;
   // Delete UI integrated Pointer
-  delete originalFrame;
-  delete magnifyOptionsTab;
+  if (originalFrame)
+    delete originalFrame;
+  
+  if (magnifyOptionsTab)
+    delete magnifyOptionsTab;
   // Delete UI
   delete ui;
 }

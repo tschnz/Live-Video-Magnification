@@ -2,31 +2,37 @@
 // Qt
 #include <QDebug>
 
-QImage MatToQImage(const Mat &mat) {
-  // 8-bits unsigned, NO. OF CHANNELS=1
-  if (mat.type() == CV_8UC1) {
-    // Set the color table (used to translate colour indexes to qRgb values)
-    QVector<QRgb> colorTable;
-    for (int i = 0; i < 256; i++)
-      colorTable.push_back(qRgb(i, i, i));
-    // Copy input Mat
-    const uchar *qImageBuffer = (const uchar *)mat.data;
-    // Create QImage with same dimensions as input Mat
-    QImage img(qImageBuffer, mat.cols, mat.rows, mat.step,
-               QImage::Format_Indexed8);
-    img.setColorTable(colorTable);
-    return img;
-  }
-  // 8-bits unsigned, NO. OF CHANNELS=3
-  else if (mat.type() == CV_8UC3) {
-    // Copy input Mat
-    const uchar *qImageBuffer = (const uchar *)mat.data;
-    // Create QImage with same dimensions as input Mat
-    QImage img(qImageBuffer, mat.cols, mat.rows, mat.step,
-               QImage::Format_RGB888);
-    return img.rgbSwapped();
-  } else {
-    qDebug() << "ERROR: Mat could not be converted to QImage.";
+QImage MatToQImage(const cv::Mat& mat) {
+    switch (mat.type()) {
+        // 8-bit, 4 channel
+        case CV_8UC4: {
+            QImage img(mat.data, mat.cols, mat.rows, 
+                      static_cast<int>(mat.step), 
+                      QImage::Format_ARGB32);
+            return img.copy();
+        }
+        
+        // 8-bit, 3 channel
+        case CV_8UC3: {
+            QImage img(mat.data, mat.cols, mat.rows, 
+                      static_cast<int>(mat.step), 
+                      QImage::Format_RGB888);
+            return img.rgbSwapped(); // BGR to RGB
+        }
+        
+        // 8-bit, 1 channel
+        case CV_8UC1: {
+            QImage img(mat.data, mat.cols, mat.rows, 
+                      static_cast<int>(mat.step), 
+                      QImage::Format_Grayscale8);
+            return img.copy();
+        }
+        
+        default:
+            qWarning("matToQImage() - cv::Mat type not handled: %d", mat.type());
+            break;
+    }
+    
     return QImage();
-  }
 }
+

@@ -9,16 +9,53 @@ An OpenCV/Qt based realtime application for Eulerian Video Magnification. Works 
 ![Motion Magnified Camerastream](pictures/j_motion-cam.png)
 
 *(Un-)Wanted artifacts from a realtime motion magnified camerastream. The strong b/w areas around torso and head are resulting from a fast backwards movement and excessive amplification. The white points (the ones bigger than the noise) on the left side are awhirled dust particles, not visible in the original camera source.*
-## Building
-- Install [Qt](http://qt-project.org/) >= 6
-- Download precompiled OpenCV binaries or compile OpenCV >= 4 yourself
-- In CMakePresets.json
-    - Set CMAKE_PREFIX_PATH to the Qt installation directory which should be the same compiler as your OpenCV binaries
-    - Set CMAKE_MAKE_PROGRAM to the generator of your choice, Ninja is recommended
-    - Set OpenCV_DIR to the directory where the OpenCVConfig.cmake is located 
-    - Append the path to the OpenCV and Qt binaries to the PATH variable 
 
-I only tested this on Windows with VSCode. Make sure to install Qt msvc2022 and Tools, use pre-built OpenCV 4.10 from their website, make sure to install all VSCode Qt Extensions and set User Preferences > CMake: Use VS Developer Environment to "always".
+## Building
+This is currently only tested on Windows with Visual Studio 2022.
+
+### Static Build with Vcpkg
+Statically linking Qt6 and OpenCV with Vcpkg. Slow build times but easy deployment.
+
+#### Prerequisites
+- Install [CMake](https://cmake.org/download/)
+- Install [VS 2022](https://visualstudio.microsoft.com/downloads/) with "Desktop development with C++" workload
+- Install [Vcpkg](https://github.com/microsoft/vcpkg) (package manager for C++ libraries)
+   - For windows, choose C:\vcpkg as system vcpkg root folder (otherwise problems with long paths may occur)
+   - Set environment variable VCPKG_ROOT to your vcpkg installation folder (e.g. C:\vcpkg)
+
+#### Steps
+1. Make sure you really bootstrapped vcpkg
+2. Adjust CMakePresets.json if you want to build with something else than MSVC
+3. Build CMake project with preset "msvc-vcpkg" (Release or Debug)
+   ```
+   cmake --preset msvc-vcpkg
+   cmake --build --preset msvc-vcpkg-release
+
+### Dynamic Build with OpenCV and Qt preinstalled/prebuild
+Dynamically linking Qt6 and OpenCV from preinstalled/prebuild libraries. A lot faster build time but deployment more complicated.
+
+#### Prerequisites
+- Install [CMake](https://cmake.org/download/)
+- Install [VS 2022](https://visualstudio.microsoft.com/downloads/) with "Desktop development with C++" workload
+ - Install [Qt 6](https://www.qt.io/download)
+   - Download and install Qt 6 (e.g. C:\Qt)
+   - Make sure to install the Qt developer tools for the compiler you want to use (e.g. MSVC 2022 64-bit)
+   - Set environment variable Qt6_DIR to <Qt-install-root>/<Qt-version>/<Qt-compiler>/lib/cmake (e.g. C:/Qt/6.10.0/msvc2022_64/lib/cmake)
+- Install [OpenCV](https://opencv.org/releases/) (prebuild binaries for Windows)
+   - Download and unzip OpenCV to a folder (e.g. C:\OpenCV)
+   - Make sure the installed binaries match your compiler Qt6 compiler (e.g. MSVC 2022 64-bit)
+   - Set environment variable OpenCV_DIR to <OpenCV-install-root>/build
+
+Instead of setting the environment variables you can also adjust the CMakePresets.json file to point to your installation folders.
+
+#### Steps
+1. Adjust CMakePresets.json if you want to build with something else than MSVC
+2. Build CMake project with preset "msvc-prebuild" (Release or Debug)
+   ```
+   cmake --preset msvc-prebuild
+   cmake --build --preset msvc-prebuild-release
+   cmake --install
+   ```
 
 ### License
 This application is licensed under GPLv3, read the [LICENSE](LICENSE).
@@ -52,10 +89,10 @@ When succesfully connected to a camera or opened a window, you can draw a box in
 ### Magnify
 Try experimenting with different option values. Furthermore tooltips are provided when hovering the cursor above a text label in the options tab. If you're using an older machine and processing is too slow, try enabling the Grayscale checkbox.
 
-|                        |  Low *Level* value |  High *Level* value|
-| :---------------------- | :-----------------: | :---------------: |
-|**Color Magnification** | Slower and more accurate. Too low = no signal detection |  Faster magnification, inaccurate spatial resolution|
-|**Motion Magnification**| More noise, less movements by big objects  |   Less noise, less movements by little objects |
+|                          |                    Low *Level* value                    |                 High *Level* value                  |
+| :----------------------- | :-----------------------------------------------------: | :-------------------------------------------------: |
+| **Color Magnification**  | Slower and more accurate. Too low = no signal detection | Faster magnification, inaccurate spatial resolution |
+| **Motion Magnification** |        More noise, less movements by big objects        |    Less noise, less movements by little objects     |
 
 #### Color Magnification
 Note that in the scene, absolutely NO MOVEMENTS are required to process the video correctly.

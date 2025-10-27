@@ -25,18 +25,18 @@ public:
   void set_useVideoCodec(bool use);
 
 private:
-  Ui::VideoView *ui;
+  Ui::VideoView *ui = nullptr;
   QFileInfo file;
   QString filename;
-  PlayerThread *playerThread;
+  PlayerThread *playerThread = nullptr;
   ImageProcessingFlags imageProcessingFlags;
   bool isFileLoaded;
-  MagnifyOptions *magnifyOptionsTab;
+  MagnifyOptions *magnifyOptionsTab = nullptr;
   void stopPlayerThread();
   QString getFormattedTime(int time);
   void handleOriginalWindow(bool doEmit);
-  FrameLabel *originalFrame;
-  SavingThread *vidSaver;
+  FrameLabel *originalFrame = nullptr;
+  SavingThread *vidSaver = nullptr;
   int codec;
   bool useVideoCodec;
 

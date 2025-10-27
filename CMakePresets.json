@@ -2,75 +2,82 @@
     "version": 10,
     "configurePresets": [
         {
-            "name": "ninja-nmc-base",
+            "name": "default",
             "hidden": true,
             "generator": "Ninja Multi-Config",
-            "binaryDir": "${sourceDir}/build/${presetName}",
-            "cacheVariables": {
-                "CMAKE_MAKE_PROGRAM": "C:/Qt/Tools/Ninja/ninja.exe"
-            }
+            "binaryDir": "${sourceDir}/build/${presetName}"
         },
         {
-            "name": "msvc-base",
+            "name": "vcpkg-base",
             "hidden": true,
-            "inherits": "ninja-nmc-base",
+            "inherits": "default",
             "cacheVariables": {
-                "CMAKE_PREFIX_PATH": "C:/Qt/6.8.1/msvc2022_64",
-                "OpenCV_DIR": "C:/opencv/build"
-            },
-            "environment": {
-                "PATH": "C:/Qt/6.8.1/msvc2022_64/bin;C:/opencv/build/x64/vc16/bin;$penv{PATH}"
+                "CMAKE_TOOLCHAIN_FILE": "${env:VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
             }
         },
         {
-            "name": "mingw-base",
+            "name": "prebuild-base",
             "hidden": true,
-            "inherits": "ninja-nmc-base",
+            "inherits": "default",
             "cacheVariables": {
-                "CMAKE_PREFIX_PATH": "C:/Qt/6.8.1/mingw_64",
-                "OpenCV_DIR": "C:/OpenCV-MinGW-Build-OpenCV-4.5.5-x64",
-                "CMAKE_C_COMPILER": "C:/mingw64/bin/gcc.exe",
-                "CMAKE_CXX_COMPILER": "C:/mingw64/bin/g++.exe"
-            },
-            "environment": {
-                "PATH": "C:/Qt/6.8.1/mingw_64/bin;C:/OpenCV-MinGW-Build-OpenCV-4.5.5-x64/x64/mingw/bin;C:/mingw64/bin;$penv{PATH}"
+                "CMAKE_PREFIX_PATH": "${env:OpenCV_DIR};${env:Qt6_DIR}",
+                "OpenCV_DIR": "${env:OpenCV_DIR}",
+                "Qt6_DIR": "${env:Qt6_DIR}"
             }
         },
         {
-            "name": "msvc",
-            "displayName": "MSVC",
-            "inherits": "msvc-base"
+            "name": "msvc-vcpkg",
+            "displayName": "MSVC (vcpkg static)",
+            "inherits": "vcpkg-base",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            },
+            "cacheVariables": {
+                "BUILD_STATIC": "ON",
+                "VCPKG_TARGET_TRIPLET": "x64-windows-static"
+            }
         },
         {
-            "name": "mingw",
-            "displayName": "MinGW",
-            "inherits": "mingw-base"
+            "name": "msvc-prebuild",
+            "displayName": "MSVC (prebuild dynamic OpenCV & Qt6)",
+            "inherits": "prebuild-base",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            },
+            "cacheVariables": {
+                "BUILD_STATIC": "OFF",
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/build/${presetName}/install"
+            }
         }
     ],
     "buildPresets": [
         {
-            "name": "msvc-debug",
-            "configurePreset": "msvc",
-            "displayName": "Debug",
+            "name": "msvc-vcpkg-debug",
+            "configurePreset": "msvc-vcpkg",
+            "displayName": "Debug (MSVC with vcpkg)",
             "configuration": "Debug"
         },
         {
-            "name": "msvc-release",
-            "configurePreset": "msvc",
-            "displayName": "Release",
-            "configuration": "RelWithDebInfo"
+            "name": "msvc-vcpkg-release",
+            "configurePreset": "msvc-vcpkg",
+            "displayName": "Release (MSVC with vcpkg)",
+            "configuration": "Release"
         },
         {
-            "name": "mingw-debug",
-            "configurePreset": "mingw",
-            "displayName": "Debug",
+            "name": "msvc-prebuild-debug",
+            "configurePreset": "msvc-prebuild",
+            "displayName": "Debug (MSVC with prebuild OpenCV & Qt6)",
             "configuration": "Debug"
         },
         {
-            "name": "mingw-release",
-            "configurePreset": "mingw",
-            "displayName": "Release",
-            "configuration": "RelWithDebInfo"
+            "name": "msvc-prebuild-release",
+            "configurePreset": "msvc-prebuild",
+            "displayName": "Release (MSVC with prebuild OpenCV & Qt6)",
+            "configuration": "Release"
         }
     ]
 }

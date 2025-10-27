@@ -10,7 +10,7 @@
 #include <QtCore/QQueue>
 #include <QtCore/QThread>
 // OpenCV
-#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/opencv.hpp>
 // Local
 #include "../helper/MatToQImage.h"
 #include "../magnification/Magnificator.h"

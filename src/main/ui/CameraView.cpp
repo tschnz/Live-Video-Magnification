@@ -70,9 +70,15 @@ CameraView::~CameraView() {
                << "] WARNING: Camera already disconnected.";
   }
   // Delete UI
-  delete processingThread;
-  delete captureThread;
-  delete originalFrame;
+  if (processingThread)
+    delete processingThread;
+
+  if (captureThread)
+      delete captureThread;
+
+  if (originalFrame)
+    delete originalFrame;
+
   delete ui;
 }
 

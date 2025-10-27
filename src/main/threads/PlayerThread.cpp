@@ -208,7 +208,7 @@ bool PlayerThread::loadFile() {
   // Open file
   bool openResult = isFileLoaded();
   if (!openResult)
-    openResult = cap.open(filepath);
+    openResult = cap.open(filepath, cv::CAP_FFMPEG);
 
   // Set resolution
   if (width != -1)

@@ -9,7 +9,7 @@
 // Local
 #include "../other/Config.h"
 // OpenCV
-#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/opencv.hpp>
 
 namespace Ui {
 class CameraConnectDialog;

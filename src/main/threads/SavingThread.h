@@ -4,7 +4,7 @@
 #include <QMutex>
 #include <QtCore/QThread>
 // OpenCV
-#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/opencv.hpp>
 // Local
 #include "../magnification/Magnificator.h"
 #include "../other/Structures.h"

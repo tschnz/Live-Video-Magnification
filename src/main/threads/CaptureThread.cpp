@@ -1,4 +1,5 @@
 #include "CaptureThread.h"
+#include <opencv2/videoio.hpp>
 
 CaptureThread::CaptureThread(SharedImageBuffer *sharedImageBuffer,
                              int deviceNumber, bool dropFrameIfBufferFull,
@@ -60,7 +61,11 @@ void CaptureThread::run() {
 
 bool CaptureThread::connectToCamera() {
   // Open camera
-  bool camOpenResult = cap.open(deviceNumber);
+  bool camOpenResult = cap.open(deviceNumber, cv::CAP_ANY);
+
+  if(!cap.isOpened())
+      return false;
+
   // Set resolution
   if (width != -1)
     cap.set(cv::CAP_PROP_FRAME_WIDTH, width);
