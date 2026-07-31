@@ -1,0 +1,12 @@
+# RPM %postun: remove the /usr symlinks only on final erase ($1 = 0; $1 = 1 means upgrade).
+ICON_SIZES="16 32 48 64 128 256 512"
+
+if [ "$1" = "0" ]; then
+    rm -f /usr/bin/livim
+    rm -f /usr/share/applications/livim.desktop
+    for sz in $ICON_SIZES; do
+        rm -f "/usr/share/icons/hicolor/${sz}x${sz}/apps/livim.png"
+    done
+    update-desktop-database -q /usr/share/applications || true
+    gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true
+fi

@@ -1,36 +1,22 @@
-# C++ objects and libs
-*.slo
-*.lo
-*.o
-*.a
-*.la
-*.lai
-*.so
-*.dll
-*.dylib
+# Build intermediates
+/build/
 
-# Qt
-/.qmake.cache
-/.qmake.stash
-*.pro.user
-*.pro.user.*
-*.moc
-moc_*.cpp
-qrc_*.cpp
-ui_*.h
-Makefile*
-*-build-*
+# Shippable artifacts (CPack packages + AppImage all land here)
+/dist/
 
-# QtCreator
-*.autosave
-
-# QtCtreator Qml
-*.qmlproject.user
-*.qmlproject.user.*
-
-# Build
-build/
+# Generated compile database (machine-specific absolute paths)
 compile_commands.json
 
-.vscode/
-.cache/
+# vcpkg manifest-mode installed tree
+/vcpkg_installed/
+
+# Machine-specific CMake preset overrides (e.g. CMAKE_MAKE_PROGRAM for Ninja)
+CMakeUserPresets.json
+
+# IDE / editor
+/.vs/
+/.vscode/
+*.user
+
+# AppImage packaging: downloaded linuxdeploy/appimagetool cache
+/packaging/.tools/

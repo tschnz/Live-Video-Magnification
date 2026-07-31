@@ -1,0 +1,27 @@
+# Warm the vcpkg binary cache from main on dependency-affecting pushes, so tag builds only restore.
+# actions/cache entries are restorable only from the saving ref + the default branch, so a cache saved
+# by a tag build is invisible to every other tag (cold builds). Running the same build here, on main,
+# saves it where every tag build can restore it. The paths filter lives in this thin caller because
+# combining `paths:` with release.yml's `v*` tag trigger is unreliable. release.yml skips its release
+# job and upload for these runs. The weekly re-warm is release.yml's own schedule (always default branch).
+name: Warm vcpkg cache
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'vcpkg.json'
+      - 'triplets/**'
+      - 'CMakePresets.json'
+      - '.github/workflows/release.yml'
+      - '.github/workflows/warm-vcpkg-cache.yml'
+
+jobs:
+  warm:
+    uses: ./.github/workflows/release.yml
+    # Must declare every permission the called workflow's jobs declare: GitHub validates the reusable
+    # call at plan time, before `if:` runs (even for the always-skipped-here release job).
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=LiViM
+GenericName=Video Motion Magnification
+Comment=Live video motion and color magnification
+Exec=livim
+Icon=livim
+Terminal=false
+Categories=AudioVideo;Video;

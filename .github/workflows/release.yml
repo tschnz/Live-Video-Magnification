@@ -1,0 +1,191 @@
+# Build & publish livim (Linux/Windows/macOS) on every version tag.
+#   git tag v1.0.0 && git push origin v1.0.0  ->  a GitHub Release with all three OSes' packages.
+# Each runner runs `cmake --workflow --preset <os>-dist` (configure -> Release build -> package). The
+# vcpkg `files` binary cache (persisted via actions/cache) turns the ~1-2h cold from-source
+# Qt/OpenCV/ffmpeg build into a minutes-long restore.
+#
+# actions/cache restore is scoped to the saving ref + the default branch, so the cache MUST be saved
+# from main (warm-vcpkg-cache.yml on dep pushes + the weekly schedule below); tag builds only restore.
+# Public repos build free; private repos bill minutes Linux 1x / Windows 2x / macOS 10x.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch: {}      # manual run -> DRAFT release (pipeline test)
+  workflow_call: {}          # reused by warm-vcpkg-cache.yml to warm the cache on main
+  schedule:
+    - cron: '23 5 * * 1'     # weekly re-warm; actions/cache evicts entries idle >7 days
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Persist vcpkg's compiled deps via the `files` provider (vcpkg dropped its x-gha cache in Apr 2025).
+  VCPKG_BINARY_SOURCES: "clear;files,${{ github.workspace }}/vcpkg-binary-cache,readwrite"
+  # Overlay triplets build deps Release-only when set (~halves build time/disk); unset locally keeps Debug too.
+  LIVIM_CI_RELEASE_ONLY: "1"
+  VCPKG_OVERLAY_TRIPLETS: "${{ github.workspace }}/triplets"
+
+jobs:
+  build:
+    name: Build & package (${{ matrix.os }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 350     # cold from-source Qt build (Windows ~3h); cached runs are minutes
+    strategy:
+      fail-fast: false       # one OS failing must not cancel the others
+      matrix:
+        include:
+          - { os: linux,       runner: ubuntu-22.04, preset: linux-dist }    # glibc floor
+          - { os: windows,     runner: windows-2022, preset: windows-dist }
+          - { os: macos-arm64, runner: macos-14,     preset: macos-dist }    # Apple Silicon
+    steps:
+      - uses: actions/checkout@v5
+
+      # vcpkg's ABI hash includes the compiler, so key the cache on the runner image: a toolchain
+      # bump rotates the key (new tree persists) instead of colliding with the old immutable entry.
+      - name: Identify runner image
+        id: runner-image
+        shell: bash
+        run: echo "tag=${ImageOS:-$RUNNER_OS}-${ImageVersion:-local}" >> "$GITHUB_OUTPUT"
+
+      # Restore vcpkg's binary cache. Only entries saved on main are restorable here (see header);
+      # restore/save are split so a failure in a later step can't discard freshly built ports.
+      - name: Restore vcpkg-built dependencies
+        id: vcpkg-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ github.workspace }}/vcpkg-binary-cache
+          key: vcpkg-${{ matrix.os }}-${{ steps.runner-image.outputs.tag }}-${{ hashFiles('vcpkg.json', 'triplets/**', 'CMakePresets.json') }}
+          restore-keys: |
+            vcpkg-${{ matrix.os }}-${{ steps.runner-image.outputs.tag }}-
+            vcpkg-${{ matrix.os }}-
+
+      # Pin vcpkg to vcpkg.json's builtin-baseline: the preinstalled vcpkg is older and lacks the
+      # pinned port versions. The cache is keyed by package ABI, so a fresh clone still restores.
+      - name: Set up vcpkg at the manifest baseline
+        shell: bash
+        run: |
+          baseline=$(sed -n 's/.*"builtin-baseline" *: *"\([0-9a-f]*\)".*/\1/p' vcpkg.json)
+          echo "vcpkg baseline: $baseline"
+          git clone https://github.com/microsoft/vcpkg.git "$RUNNER_TEMP/vcpkg"
+          git -C "$RUNNER_TEMP/vcpkg" checkout "$baseline"
+          echo "VCPKG_ROOT=$RUNNER_TEMP/vcpkg" >> "$GITHUB_ENV"
+
+      - name: Bootstrap vcpkg (Unix)
+        if: runner.os != 'Windows'
+        run: "$RUNNER_TEMP/vcpkg/bootstrap-vcpkg.sh -disableMetrics"
+      - name: Bootstrap vcpkg (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: '"%RUNNER_TEMP%\vcpkg\bootstrap-vcpkg.bat" -disableMetrics'
+
+      - name: Install Linux build deps
+        if: runner.os == 'Linux'
+        run: ./scripts/setup-linux.sh          # canonical apt list
+
+      - name: Install rpmbuild (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y rpm        # CPack's RPM generator needs it
+
+      # Reclaim ~20-25 GB; the cold from-source build otherwise exhausts the OS disk. Keep
+      # /opt/hostedtoolcache (Node lives there and later steps need it).
+      - name: Free disk space (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
+                      /usr/local/.ghcup /usr/local/share/boost
+          sudo docker image prune --all --force || true
+          df -h /
+
+      - name: Install macOS build deps
+        if: runner.os == 'macOS'
+        run: brew install nasm ninja pkg-config autoconf autoconf-archive automake libtool
+
+      - name: Set up MSVC toolchain (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1           # puts cl on PATH for the Ninja build
+
+      - name: Ensure NSIS installer generator (Windows)
+        if: runner.os == 'Windows'
+        run: choco install nsis -y --no-progress
+
+      - name: Build & package
+        shell: bash
+        run: cmake --workflow --preset ${{ matrix.preset }}
+
+      # Save the cache once the deps build has succeeded (later steps must not discard it). Skipped on
+      # an exact-key hit and on tag runs (tag-scoped saves are unreachable by other refs).
+      - name: Save vcpkg-built dependencies
+        if: github.ref_type != 'tag' && steps.vcpkg-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ github.workspace }}/vcpkg-binary-cache
+          key: vcpkg-${{ matrix.os }}-${{ steps.runner-image.outputs.tag }}-${{ hashFiles('vcpkg.json', 'triplets/**', 'CMakePresets.json') }}
+
+      # Linux also ships a portable AppImage (the one format CPack can't produce).
+      - name: Build AppImage (Linux)
+        if: runner.os == 'Linux'
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: 1          # runners have no FUSE
+        run: ./packaging/make-appimage.sh
+
+      - name: Upload packages
+        if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'   # warm runs publish nothing
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-${{ matrix.os }}
+          retention-days: 7                    # only needs to outlive the release job; cuts billed storage
+          # Only the root-level installers (+ AppImage). NOT dist/**: CPack's _CPack_Packages/ staging
+          # tree is tens of thousands of files and OOMs the upload action just enumerating it.
+          path: |
+            dist/*.deb
+            dist/*.rpm
+            dist/*.dmg
+            dist/*.exe
+            dist/*.zip
+            dist/*.AppImage
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub Release
+    # Only real tags and manual dispatches publish; warm runs exist only to save the cache on main.
+    if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write                          # create/update the Release
+      id-token: write                          # OIDC token for the attestation
+      attestations: write                      # record build-provenance attestation
+    steps:
+      - name: Collect every OS's packages
+        uses: actions/download-artifact@v4
+        with:
+          pattern: packages-*
+          path: dist
+          merge-multiple: true
+
+      # One SHA256SUMS.txt over all artifacts (sorted, excludes itself); `sha256sum -c`-friendly.
+      - name: Generate SHA256SUMS.txt
+        working-directory: dist
+        run: sha256sum $(find . -maxdepth 1 -type f ! -name SHA256SUMS.txt -printf '%P\n' | sort) > SHA256SUMS.txt
+
+      # Keyless (OIDC) build provenance; verify with `gh attestation verify <file> --repo <repo>`.
+      # Unavailable on user-owned private repos (API 403s), so skip while private; SHA256SUMS.txt covers integrity.
+      - name: Attest build provenance
+        if: ${{ !github.event.repository.private }}
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/*
+
+      - name: Publish
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/**
+          generate_release_notes: true
+          # Real tag -> published release on that tag; manual run -> safe DRAFT.
+          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || format('dryrun-{0}', github.run_number) }}
+          draft: ${{ github.ref_type != 'tag' }}
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          fail_on_unmatched_files: true

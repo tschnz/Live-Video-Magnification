@@ -1,83 +1,256 @@
 {
-    "version": 10,
-    "configurePresets": [
-        {
-            "name": "default",
-            "hidden": true,
-            "generator": "Ninja Multi-Config",
-            "binaryDir": "${sourceDir}/build/${presetName}"
-        },
-        {
-            "name": "vcpkg-base",
-            "hidden": true,
-            "inherits": "default",
-            "cacheVariables": {
-                "CMAKE_TOOLCHAIN_FILE": "${env:VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
-            }
-        },
-        {
-            "name": "prebuild-base",
-            "hidden": true,
-            "inherits": "default",
-            "cacheVariables": {
-                "CMAKE_PREFIX_PATH": "${env:OpenCV_DIR};${env:Qt6_DIR}",
-                "OpenCV_DIR": "${env:OpenCV_DIR}",
-                "Qt6_DIR": "${env:Qt6_DIR}"
-            }
-        },
-        {
-            "name": "msvc-vcpkg",
-            "displayName": "MSVC (vcpkg static)",
-            "inherits": "vcpkg-base",
-            "condition": {
-                "type": "equals",
-                "lhs": "${hostSystemName}",
-                "rhs": "Windows"
-            },
-            "cacheVariables": {
-                "BUILD_STATIC": "ON",
-                "VCPKG_TARGET_TRIPLET": "x64-windows-static"
-            }
-        },
-        {
-            "name": "msvc-prebuild",
-            "displayName": "MSVC (prebuild dynamic OpenCV & Qt6)",
-            "inherits": "prebuild-base",
-            "condition": {
-                "type": "equals",
-                "lhs": "${hostSystemName}",
-                "rhs": "Windows"
-            },
-            "cacheVariables": {
-                "BUILD_STATIC": "OFF",
-                "CMAKE_INSTALL_PREFIX": "${sourceDir}/build/${presetName}/install"
-            }
-        }
-    ],
-    "buildPresets": [
-        {
-            "name": "msvc-vcpkg-debug",
-            "configurePreset": "msvc-vcpkg",
-            "displayName": "Debug (MSVC with vcpkg)",
-            "configuration": "Debug"
-        },
-        {
-            "name": "msvc-vcpkg-release",
-            "configurePreset": "msvc-vcpkg",
-            "displayName": "Release (MSVC with vcpkg)",
-            "configuration": "Release"
-        },
-        {
-            "name": "msvc-prebuild-debug",
-            "configurePreset": "msvc-prebuild",
-            "displayName": "Debug (MSVC with prebuild OpenCV & Qt6)",
-            "configuration": "Debug"
-        },
-        {
-            "name": "msvc-prebuild-release",
-            "configurePreset": "msvc-prebuild",
-            "displayName": "Release (MSVC with prebuild OpenCV & Qt6)",
-            "configuration": "Release"
-        }
-    ]
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja Multi-Config",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+      "cacheVariables": {
+        "CMAKE_CONFIGURATION_TYPES": "Debug;RelWithDebInfo;Release",
+        "VCPKG_INSTALLED_DIR": "${sourceDir}/build/vcpkg_installed"
+      }
+    },
+    {
+      "name": "msvc",
+      "displayName": "MSVC",
+      "inherits": "base",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "CMAKE_CXX_COMPILER": "cl"
+      }
+    },
+    {
+      "name": "clang-cl",
+      "displayName": "Clang (clang-cl)",
+      "inherits": "base",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "CMAKE_CXX_COMPILER": "clang-cl"
+      }
+    },
+    {
+      "name": "mingw",
+      "displayName": "MinGW",
+      "inherits": "base",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "x64-mingw-dynamic",
+        "CMAKE_CXX_COMPILER": "g++"
+      }
+    },
+    {
+      "name": "gcc",
+      "displayName": "GCC",
+      "inherits": "base",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "x64-linux-dynamic",
+        "VCPKG_HOST_TRIPLET": "x64-linux-dynamic",
+        "CMAKE_CXX_COMPILER": "g++"
+      }
+    },
+    {
+      "name": "clang",
+      "displayName": "Clang",
+      "inherits": "base",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "x64-linux-dynamic",
+        "VCPKG_HOST_TRIPLET": "x64-linux-dynamic",
+        "CMAKE_CXX_COMPILER": "clang++"
+      }
+    },
+    {
+      "name": "appleclang",
+      "displayName": "Apple Clang",
+      "inherits": "base",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      },
+      "cacheVariables": {
+        "VCPKG_OVERLAY_TRIPLETS": "${sourceDir}/triplets"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "msvc-debug",
+      "displayName": "Debug",
+      "configurePreset": "msvc",
+      "configuration": "Debug"
+    },
+    {
+      "name": "msvc-release",
+      "displayName": "Release",
+      "configurePreset": "msvc",
+      "configuration": "RelWithDebInfo"
+    },
+    {
+      "name": "clang-cl-debug",
+      "displayName": "Debug",
+      "configurePreset": "clang-cl",
+      "configuration": "Debug"
+    },
+    {
+      "name": "clang-cl-release",
+      "displayName": "Release",
+      "configurePreset": "clang-cl",
+      "configuration": "RelWithDebInfo"
+    },
+    {
+      "name": "mingw-debug",
+      "displayName": "Debug",
+      "configurePreset": "mingw",
+      "configuration": "Debug"
+    },
+    {
+      "name": "mingw-release",
+      "displayName": "Release",
+      "configurePreset": "mingw",
+      "configuration": "RelWithDebInfo"
+    },
+    {
+      "name": "gcc-debug",
+      "displayName": "Debug",
+      "configurePreset": "gcc",
+      "configuration": "Debug"
+    },
+    {
+      "name": "gcc-release",
+      "displayName": "Release",
+      "configurePreset": "gcc",
+      "configuration": "RelWithDebInfo"
+    },
+    {
+      "name": "clang-debug",
+      "displayName": "Debug",
+      "configurePreset": "clang",
+      "configuration": "Debug"
+    },
+    {
+      "name": "clang-release",
+      "displayName": "Release",
+      "configurePreset": "clang",
+      "configuration": "RelWithDebInfo"
+    },
+    {
+      "name": "appleclang-debug",
+      "displayName": "Debug",
+      "configurePreset": "appleclang",
+      "configuration": "Debug"
+    },
+    {
+      "name": "appleclang-release",
+      "displayName": "Release",
+      "configurePreset": "appleclang",
+      "configuration": "RelWithDebInfo"
+    },
+    {
+      "name": "gcc-app",
+      "displayName": "App (ship Release)",
+      "configurePreset": "gcc",
+      "configuration": "Release",
+      "targets": [ "livim" ]
+    },
+    {
+      "name": "msvc-app",
+      "displayName": "App (ship Release)",
+      "configurePreset": "msvc",
+      "configuration": "Release",
+      "targets": [ "livim" ]
+    },
+    {
+      "name": "appleclang-app",
+      "displayName": "App (ship Release)",
+      "configurePreset": "appleclang",
+      "configuration": "Release",
+      "targets": [ "livim" ]
+    }
+  ],
+  "packagePresets": [
+    {
+      "name": "linux-pkg",
+      "displayName": "Package Linux (.deb + .rpm)",
+      "configurePreset": "gcc",
+      "configurations": [ "Release" ],
+      "generators": [ "DEB", "RPM" ],
+      "packageDirectory": "${sourceDir}/dist"
+    },
+    {
+      "name": "windows-pkg",
+      "displayName": "Package Windows (setup.exe + portable .zip)",
+      "configurePreset": "msvc",
+      "configurations": [ "Release" ],
+      "generators": [ "NSIS", "ZIP" ],
+      "packageDirectory": "${sourceDir}/dist"
+    },
+    {
+      "name": "macos-pkg",
+      "displayName": "Package macOS (.dmg)",
+      "configurePreset": "appleclang",
+      "configurations": [ "Release" ],
+      "generators": [ "DragNDrop" ],
+      "packageDirectory": "${sourceDir}/dist"
+    }
+  ],
+  "workflowPresets": [
+    {
+      "name": "linux-dist",
+      "displayName": "Ship Linux: configure -> build app -> package",
+      "steps": [
+        { "type": "configure", "name": "gcc" },
+        { "type": "build",     "name": "gcc-app" },
+        { "type": "package",   "name": "linux-pkg" }
+      ]
+    },
+    {
+      "name": "windows-dist",
+      "displayName": "Ship Windows: configure -> build app -> package",
+      "steps": [
+        { "type": "configure", "name": "msvc" },
+        { "type": "build",     "name": "msvc-app" },
+        { "type": "package",   "name": "windows-pkg" }
+      ]
+    },
+    {
+      "name": "macos-dist",
+      "displayName": "Ship macOS: configure -> build app -> package",
+      "steps": [
+        { "type": "configure", "name": "appleclang" },
+        { "type": "build",     "name": "appleclang-app" },
+        { "type": "package",   "name": "macos-pkg" }
+      ]
+    }
+  ]
 }

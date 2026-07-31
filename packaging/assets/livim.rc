@@ -1,0 +1,2 @@
+// Windows application icon resource; the icon path is relative to this file.
+IDI_ICON1 ICON "livim.ico"

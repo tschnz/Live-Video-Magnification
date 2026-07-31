@@ -1,39 +1,74 @@
 {
-    "name": "live-video-magnification",
-    "version-string": "0.1.0",
-    "builtin-baseline": "271a5b8850aa50f9a40269cbf3cf414b36e333d6",
-    "dependencies": [
-        {
-            "name": "opencv4",
-            "default-features": false,
-            "features": [
-                "ffmpeg",
-                "dshow",
-                "jpeg",
-                "png",
-                "world"
-            ]
-        },
-        {
-            "name": "qtbase",
-            "default-features": false,
-            "features": [
-                "gui",
-                "thread",
-                "widgets"
-            ]
-        }
-    ],
-    "overrides": [
-        {
-            "name": "opencv4",
-            "version": "4.11.0",
-            "port-version": 4
-        },
-        {
-            "name": "qtbase",
-            "version": "6.9.1",
-            "port-version": 1
-        }
-    ]
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "livim",
+  "version": "1.0.0",
+  "description": "Live video motion and color magnification.",
+  "builtin-baseline": "a5ac4c37640e9cd2b1662e5b0c33886ea2dda9bf",
+  "dependencies": [
+    {
+      "name": "ffmpeg",
+      "default-features": false,
+      "features": [
+        "avcodec",
+        "avformat",
+        "swresample",
+        "swscale"
+      ]
+    },
+    {
+      "name": "opencv4",
+      "default-features": false,
+      "features": [
+        "ffmpeg"
+      ]
+    },
+    {
+      "name": "opencv4",
+      "default-features": false,
+      "features": [
+        "msmf",
+        "dshow"
+      ],
+      "platform": "windows"
+    },
+    {
+      "name": "qtbase",
+      "default-features": false,
+      "features": [
+        "gui",
+        "widgets",
+        "opengl",
+        "png"
+      ]
+    },
+    {
+      "name": "qtbase",
+      "host": true,
+      "default-features": false,
+      "features": [
+        "gui",
+        "widgets"
+      ]
+    },
+    {
+      "name": "qtbase",
+      "default-features": false,
+      "features": [
+        "xcb",
+        "xcb-xlib",
+        "xcb-sm",
+        "xrender",
+        "egl",
+        "fontconfig",
+        "freetype",
+        "harfbuzz",
+        "dbus"
+      ],
+      "platform": "linux"
+    },
+    {
+      "name": "qtwayland",
+      "platform": "linux"
+    }
+  ]
 }

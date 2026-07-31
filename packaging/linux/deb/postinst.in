@@ -1,0 +1,24 @@
+#!/bin/sh
+# Post-install: symlink the /opt bundle (PATH binary, desktop entry, icons) into /usr.
+# POSIX sh — dpkg runs this under dash.
+set -e
+
+PREFIX="@CPACK_PACKAGING_INSTALL_PREFIX@"
+ICON_SIZES="16 32 48 64 128 256 512"
+
+case "$1" in
+    configure)
+        ln -sf "$PREFIX/bin/livim" /usr/bin/livim
+        mkdir -p /usr/share/applications
+        ln -sf "$PREFIX/share/applications/livim.desktop" /usr/share/applications/livim.desktop
+        for sz in $ICON_SIZES; do
+            dir="/usr/share/icons/hicolor/${sz}x${sz}/apps"
+            mkdir -p "$dir"
+            ln -sf "$PREFIX/share/icons/hicolor/${sz}x${sz}/apps/livim.png" "$dir/livim.png"
+        done
+        update-desktop-database -q /usr/share/applications || true
+        gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true
+        ;;
+esac
+
+exit 0

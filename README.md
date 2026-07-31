@@ -1,141 +1,123 @@
-# Live Motion Magnification
+# LiViM
 
-This was my Bachelor thesis back in 2015. It's more of a zombie project I keep reviving from time to time with new build systems. If I get bored I might overhaul it...or at least make it crash less.
+**Live Video Magnification** amplifies motion and color changes too subtle to see by eye — live from a
+webcam or a video file. It implements the MIT CSAIL Eulerian video magnification techniques
+([References](#references)) with a Qt 6 GUI.
 
-An OpenCV/Qt based realtime application for Eulerian Video Magnification. Works with multiple videos and cameras at the same time and let's you export the magnified videos.
+| Dark                               | Light                                |
+| ---------------------------------- | ------------------------------------ |
+| ![LiViM, dark](img/livim_dark.png) | ![LiViM, light](img/livim_light.png) |
 
-## Examples
-![Color Magnified Video](pictures/j_color-vid.png)
+Footage: [AVUM shaker testing](https://www.esa.int/ESA_Multimedia/Videos/2018/11/AVUM_shaker_testing)
+(ESA).
 
-*Image shows the color magnified output for a video. In the pictures you can see the effects of the cardiac cycle on the skins color. The upper image shows the skin of the face during a diastole, the lower one during a ventricular systole of the cycle.*
+## Features
 
-![Motion Magnified Camerastream](pictures/j_motion-cam.png)
+- Three magnification algorithms:
+  - **Motion (Laplace)** - Laplacian pyramid + temporal IIR bandpass; classic Eulerian motion.
+  - **Motion (Phase)** - phase-based on a Riesz pyramid + Butterworth bandpass; less noise.
+  - **Color** - Gaussian pyramid + ideal FFT bandpass over a rolling window (e.g. blood flow).
+- **Videos**: Frame-accurate timeline (scrub, in/out trim, loop) and manual playback speed control.
+- **Cameras**: Capture via V4L2, Media Foundation, AVFoundation.
+- **Comparison views**: processed, original, side-by-side, top/bottom - synced to the same frame.
+- **Real-time controls**: processing resolution (1/1–1/8), a drawable ROI, grayscale.
+- **Export**: MP4 (H.264), AVI (MJPG), or MKV (FFV1, lossless).
+- Light/dark theme following the OS.
 
-*(Un-)Wanted artifacts from a realtime motion magnified camerastream. The strong b/w areas around torso and head are resulting from a fast backwards movement and excessive amplification. The white points (the ones bigger than the noise) on the left side are awhirled dust particles, not visible in the original camera source.*
+## Installation
 
-## Building
-This is currently only tested on Windows with Visual Studio 2022.
+Prebuilt packages are on the [Releases](../../releases) page:
 
-### Static Build with Vcpkg
-Statically linking Qt6 and OpenCV with Vcpkg. Slow build times but easy deployment.
+| Platform | Files                                 |
+| -------- | ------------------------------------- |
+| Linux    | `.deb`, `.rpm`, `.AppImage` (x86_64)  |
+| Windows  | NSIS `.exe`, portable `.zip` (x86_64) |
+| macOS    | `.dmg` (Apple Silicon)                |
 
-#### Prerequisites
-- Install [CMake](https://cmake.org/download/)
-- Install [VS 2022](https://visualstudio.microsoft.com/downloads/) with "Desktop development with C++" workload
-- Install [Vcpkg](https://github.com/microsoft/vcpkg) (package manager for C++ libraries)
-   - For windows, choose C:\vcpkg as system vcpkg root folder (otherwise problems with long paths may occur)
-   - Set environment variable VCPKG_ROOT to your vcpkg installation folder (e.g. C:\vcpkg)
+The video view needs OpenGL 3.3 (core profile).
 
-#### Steps
-1. Make sure you really bootstrapped vcpkg
-2. Adjust CMakePresets.json if you want to build with something else than MSVC
-3. Build CMake project with preset "msvc-vcpkg" (Release or Debug)
-   ```
-   cmake --preset msvc-vcpkg
-   cmake --build --preset msvc-vcpkg-release
+### Before you start
 
-### Dynamic Build with OpenCV and Qt preinstalled/prebuild
-Dynamically linking Qt6 and OpenCV from preinstalled/prebuild libraries. A lot faster build time but deployment more complicated.
+- **macOS** - Gatekeeper blocks the app. Right-click → Open once, or
+  `xattr -dr com.apple.quarantine /Applications/livim.app`.
+- **Windows** - SmartScreen warns on the installer; click "More info" → "Run anyway".
+- **Linux** - Camera access needs your user in the `video` group.
 
-#### Prerequisites
-- Install [CMake](https://cmake.org/download/)
-- Install [VS 2022](https://visualstudio.microsoft.com/downloads/) with "Desktop development with C++" workload
- - Install [Qt 6](https://www.qt.io/download)
-   - Download and install Qt 6 (e.g. C:\Qt)
-   - Make sure to install the Qt developer tools for the compiler you want to use (e.g. MSVC 2022 64-bit)
-   - Set environment variable Qt6_DIR to <Qt-install-root>/<Qt-version>/<Qt-compiler>/lib/cmake (e.g. C:/Qt/6.10.0/msvc2022_64/lib/cmake)
-- Install [OpenCV](https://opencv.org/releases/) (prebuild binaries for Windows)
-   - Download and unzip OpenCV to a folder (e.g. C:\OpenCV)
-   - Make sure the installed binaries match your compiler Qt6 compiler (e.g. MSVC 2022 64-bit)
-   - Set environment variable OpenCV_DIR to <OpenCV-install-root>/build
+## Usage
 
-Instead of setting the environment variables you can also adjust the CMakePresets.json file to point to your installation folders.
+Open a file or a camera, pick a **Display** mode (Processed / Original / Side-by-Side /
+Top-and-Bottom — Original doubles as the off switch, since it skips magnification entirely), then
+tune the **Processing** panel: resolution, ROI, grayscale, and the magnification parameters below.
+Reset restores the current mode's defaults. F11 toggles fullscreen, Esc leaves it.
 
-#### Steps
-1. Adjust CMakePresets.json if you want to build with something else than MSVC
-2. Build CMake project with preset "msvc-prebuild" (Release or Debug)
-   ```
-   cmake --preset msvc-prebuild
-   cmake --build --preset msvc-prebuild-release
-   cmake --install
-   ```
+| Parameter           | Motion (Laplace) | Motion (Phase) | Color | Meaning                                                                                |
+| ------------------- | :--------------: | :------------: | :---: | -------------------------------------------------------- |
+| Amplification       |        ✓         |       ✓        |   ✓   | Effect strength (also amplifies noise).                                                |
+| Cutoff Wavelength   |        ✓         |       ✓        |   –   | Spatial cutoff (%); higher = coarser structures / less noise.                          |
+| Frequency band (Hz) |        ✓         |       ✓        |   ✓   | Temporal passband, dual-handle slider (also BPM), capped at Nyquist (Capture FPS ÷ 2). |
+| Chroma attenuation  |        ✓         |       –        |   –   | How much color is carried with the magnified motion.                                   |
+| Levels              |        ✓         |       ✓        |   ✓   | Pyramid depth; higher = larger spatial scale of the effect.                            |
 
-### License
-This application is licensed under GPLv3, read the [LICENSE](LICENSE).
+**Capture FPS** is the true footage rate the temporal filters use to compute the Hz band. For
+high-speed footage played back slowly, set the real capture rate (e.g. 1000) regardless of playback
+rate.
 
-### Credits
-Thanks to Nick D'Ademo whose [qt-opencv-multithreaded](https://github.com/nickdademo/qt-opencv-multithreaded) application 
-served as basis and to Joseph Pan whose algorithms in the [QtEVM](https://github.com/wzpan/QtEVM) application were adapted
-for this project.
+The **FPS readout** in the bottom bar shows how well processing keeps up with the source:
 
-Also take a look at the MITs webpage for [Eulerian Video Magnification](http://people.csail.mit.edu/mrub/vidmag/). 
-They provide demo videos on their page and the team did a fantastic job in researching and developing this field of science.
+- **Videos** play back at the rate set next to the readout. If your machine can't keep up, playback
+  slows down rather than dropping frames — nothing is buffered ahead, so use Export when you need
+  the full-rate result.
+- **Cameras** run at whatever the hardware delivers, so frames are dropped under load. Lower the
+  processing resolution or shrink the ROI to keep up.
 
-# How do I use it?
-### Connect
-- Camera
-    - Device Number: Type in the device number of your camera connected to your computer. Indexing starts with 0 which is usually your built-in webcam.
-    - (Ubuntu/Linux) PointGrey Device on USB:  Having a DC1394 Camera connected to your computer, OpenCV redirects the camera over the v4l-API to device number 0. If you wish to also connect to your built-in camera, enable this option to set built-in to 0, DC1394 to 1
-    - Image Buffer: Select the length of an image buffer before processing those images. If dropping frames if buffer is full is disabled, your capture rate will be same the same as your processing rate.
-- Video
-    - Choose a video. Compatibility is given if your computer supports the codec. Valid file endings are .avi .mp4 .m4v .mkv .mov .wmv
-- Resolution: This does not work for videos on Ubuntu/Linux yet (Windows not tested). For cameras check the supported modes from camera manufacturer and type in the resolution specified for a mode.
-- Frames per Second: Some cameras support multiple modes with different resolution/fps/etc. . Setting the framerate will change into a mode with a framerate near the one you typed in. For videos, some mp4-files have a bad header where OpenCV can't read out the framerate, which will normally be set to 30FPS. Anyway here you can set it manually.
+**Export** opens a dialog pre-filled with the current settings (layout, output fps, format, and for
+files a frame range). The render previews live in the main window and can be aborted at any point.
+File exports re-decode the chosen range at full quality; camera exports first record raw frames into
+RAM — which grows quickly, so recording stops automatically at 8 GB — and process them afterwards.
+*Video only, no audio.*
 
-![Connect Dialog](pictures/connect_dialog.png)
+## Building from source
 
-### Main Window
-When succesfully connected to a camera or opened a window, you can draw a box in the video, to scale and only amplify this Region Of Interest in a video source. Setting the video back to normal can be done via menu that opens with a right click in the video. There is also the option to show the unmagnified image besides the processed one.
+Dependencies (Qt 6, OpenCV, FFmpeg) are built by [vcpkg](https://vcpkg.io); the first
+configure compiles them (~30–90 min, once). You need a C++20 compiler, CMake ≥ 3.25, Ninja, nasm,
+and vcpkg with `VCPKG_ROOT` set.
 
-![Right-click Menu in Frame Label](pictures/frameLabel_menu.png)
+```bash
+# Linux - setup-linux.sh installs system packages (apt/dnf/pacman) and bootstraps vcpkg
+scripts/setup-linux.sh --configure
+cmake --build --preset gcc-release && ./build/gcc/RelWithDebInfo/livim
 
-### Magnify
-Try experimenting with different option values. Furthermore tooltips are provided when hovering the cursor above a text label in the options tab. If you're using an older machine and processing is too slow, try enabling the Grayscale checkbox.
+# Windows (x64 Native Tools prompt) - needs VS 2022 with the C++ CMake tools
+cmake --preset msvc && cmake --build --preset msvc-release
 
-|                          |                    Low *Level* value                    |                 High *Level* value                  |
-| :----------------------- | :-----------------------------------------------------: | :-------------------------------------------------: |
-| **Color Magnification**  | Slower and more accurate. Too low = no signal detection | Faster magnification, inaccurate spatial resolution |
-| **Motion Magnification** |        More noise, less movements by big objects        |    Less noise, less movements by little objects     |
+# macOS - xcode-select --install; brew install cmake ninja nasm pkg-config
+cmake --preset appleclang && cmake --build --preset appleclang-release
+```
 
-#### Color Magnification
-Note that in the scene, absolutely NO MOVEMENTS are required to process the video correctly.
-- Amplification: The higher the value, the more colorful and noisy the output.
-- Frequency Range: The freq. range of periodically appearing color changes that shall be amplified. 
+`cmake --list-presets` shows what your machine offers; `*-release` is RelWithDebInfo, `*-debug` a
+debug build.
 
-![Panel for Color Magnification Options](pictures/cmag_options.png)
+## References
 
-#### Motion Magnification
-- Amplification: The higher the value, the more movements and noise are amplified.
-- Cutoff Wavelength: Reduces fast movements and noise.
-- Frequency Range: Reducing the handler values leads to magnifying slow movements more than fast movements and vice versa.
-- Chrom Attenuation: The higher the value, the more the chromaticity channels are getting amplified too, e.g. the more colorful the movements are.
+- Wu et al., [Eulerian Video Magnification](https://people.csail.mit.edu/mrub/evm/), SIGGRAPH 2012
+  - Motion (Laplace) and Color.
+- Wadhwa et al., [Phase-Based Video Motion Processing](https://people.csail.mit.edu/nwadhwa/phase-video/),
+  SIGGRAPH 2013, and [Riesz Pyramids for Fast Phase-Based Video Magnification](https://people.csail.mit.edu/nwadhwa/riesz-pyramid/),
+  ICCP 2014 - Motion (Phase).
+- MIT CSAIL [video magnification project](https://people.csail.mit.edu/mrub/vidmag/).
 
-![Panel for Motion Magnification Options](pictures/lmag_options.png)
+## License
 
-### Save
-For saving videos or recording from camera you have to specify the file extension by your own. .avi is well supported. If you should encounter problems, please try a differenct saving codec in the toolbar under File->Set Saving Codec.
+GNU Affero General Public License v3.0 - see [LICENSE](LICENSE). A separate commercial license is
+available from the maintainer. Third-party components, dynamically linked: Qt 6 (LGPLv3), OpenCV
+(Apache-2.0), FFmpeg (LGPLv2.1+, no GPL components).
 
-![MainWindow with saving codec menu](pictures/mainWindow_Codecs.png)
+## Slopclaimer
 
-# How does it work?
-The image below provides you the class structure and the dataflow (blue = images, red = options) throughout the application.
+The color and motion magnification algorithms, the pipeline and its various optimizations were part
+of my bachelor thesis at Universität Tübingen in 2015. Reviving this work and creating an actually
+useful program that doesn't crash every other click was a dream I never found time for.
 
-![Class structure](pictures/class_structure.png)
-
-
-### Algorithm
-The algorithms are using a combination of spatial filters (e.g. image pyramids) and temporal filters to determine
-motions of different spatial wavelength in videos. These can be amplified separately before collapsing the image pyramid
-and adding the motion image back to the original.
-
-![Idea of the Video Magnification Algorithm](pictures/magnification.png)
-
-#### Color Magnification
-For further informations look at the comments in the .h/.cpp files in /main/magnification/*
-
-![Color Magnification UML](pictures/colorMag.png)
-
-#### Motion Magnification
-For further informations look at the comments in the .h/.cpp files in /main/magnification/*
-
-![Laplace Magnification UML](pictures/motionMag.png)
+This app is **heavily** vibecoded and to be honest, as a solo dev with a full-time job who doesn't
+want money for this (I don't keep you from donating tho), it wouldn't be possible in this scope
+without the help of AI.

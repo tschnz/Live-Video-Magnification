@@ -1,0 +1,20 @@
+#!/bin/sh
+# Post-remove: drop the /usr symlinks created by postinst (on upgrade dpkg passes "upgrade",
+# so the links survive). POSIX sh — dpkg runs this under dash.
+set -e
+
+ICON_SIZES="16 32 48 64 128 256 512"
+
+case "$1" in
+    remove|purge)
+        rm -f /usr/bin/livim
+        rm -f /usr/share/applications/livim.desktop
+        for sz in $ICON_SIZES; do
+            rm -f "/usr/share/icons/hicolor/${sz}x${sz}/apps/livim.png"
+        done
+        update-desktop-database -q /usr/share/applications || true
+        gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true
+        ;;
+esac
+
+exit 0
