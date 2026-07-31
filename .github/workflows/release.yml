@@ -1,5 +1,5 @@
 # Build & publish livim (Linux/Windows/macOS) on every version tag.
-#   git tag v1.0.0 && git push origin v1.0.0  ->  a GitHub Release with all three OSes' packages.
+#   git tag v0.1.0 && git push origin v0.1.0  ->  a GitHub Release with all three OSes' packages.
 # Each runner runs `cmake --workflow --preset <os>-dist` (configure -> Release build -> package). The
 # vcpkg `files` binary cache (persisted via actions/cache) turns the ~1-2h cold from-source
 # Qt/OpenCV/ffmpeg build into a minutes-long restore.

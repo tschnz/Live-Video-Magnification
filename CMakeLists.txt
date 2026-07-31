@@ -5,7 +5,7 @@ if (NOT DEFINED CMAKE_OSX_DEPLOYMENT_TARGET)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "12.0" CACHE STRING "Minimum macOS deployment version")
 endif()
 
-project(LiViM VERSION 1.0.0 LANGUAGES CXX)
+project(LiViM VERSION 0.1.0 LANGUAGES CXX)
 
 if (APPLE)
     enable_language(OBJCXX)   # camera backend is Objective-C++

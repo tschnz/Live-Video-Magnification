@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
   "name": "livim",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Live video motion and color magnification.",
   "builtin-baseline": "a5ac4c37640e9cd2b1662e5b0c33886ea2dda9bf",
   "dependencies": [
