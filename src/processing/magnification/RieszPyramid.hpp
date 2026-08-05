@@ -13,8 +13,6 @@
 namespace livim {
 
 void cosSin(const cv::Mat& X, CompExpMat& result);
-// Element-wise inverse cosine, with X clamped into [-1, 1].
-void arcCos(const cv::Mat& X, cv::Mat& result);
 
 class RieszPyramidLevel {
 
