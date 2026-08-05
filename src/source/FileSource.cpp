@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <limits>
 #include <utility>
+#include <vector>
 
 #include "core/Instrumentation.hpp"
 
@@ -11,8 +12,38 @@ namespace livim {
 FileSource::FileSource(std::string path, FrameQueue* out, FramePool* pool, Instrumentation* instr)
     : SourceBase(out, pool, instr), path_(std::move(path)) {}
 
+bool FileSource::openCapture(cv::VideoCapture& cap, const std::string& path, bool forceSoftware) {
+    if (forceSoftware) {
+        // CAP_PROP_HW_ACCELERATION is honoured only at open time and only by the FFmpeg backend.
+        // On builds that ignore the parameter the open returns false, so retry with a plain open
+        // rather than failing outright.
+        if (cap.open(cv::String(path), static_cast<int>(cv::CAP_FFMPEG),
+                     std::vector<int>{cv::CAP_PROP_HW_ACCELERATION, cv::VIDEO_ACCELERATION_NONE}))
+            return true;
+        cap.release();
+    }
+    return cap.open(path);
+}
+
 bool FileSource::open() {
-    if (!cap_.open(path_)) return false;
+    if (!openCapture(cap_, path_, /*forceSoftware=*/false)) return false;
+
+    // Probe channels/size once (OpenCV only reveals them by decoding a frame); rewind afterwards.
+    cv::Mat probe;
+    if (!cap_.read(probe) || probe.empty()) {
+        // The capture opened but the first frame won't decode — typically a hardware-accelerated
+        // codec (e.g. AV1) with no hardware decoder, where the FFmpeg backend prints "Failed to get
+        // pixel format" / "Get current frame error" and every read fails. Retry with the decoder
+        // pinned to pure software before giving up.
+        cap_.release();
+        if (!openCapture(cap_, path_, /*forceSoftware=*/true)) return false;
+        if (!cap_.read(probe) || probe.empty()) return false;
+        usedSoftwareDecodeFallback_ = true;
+        cap_.set(cv::CAP_PROP_POS_FRAMES, 0);
+    }
+    setNativeChannels(probe.channels());
+    setNativeSize(probe.cols, probe.rows);
+
     const double fps = cap_.get(cv::CAP_PROP_FPS);
     reportedFps_ = (fps > 1.0) ? fps : 30.0; // fall back to 30 when unreported
     frameIntervalUs_ = 1'000'000.0 / reportedFps_;
@@ -22,13 +53,6 @@ bool FileSource::open() {
     frameCount_ = count > 0.0 ? static_cast<std::int64_t>(count) : 0;
     outFrame_.store(-1, std::memory_order_release); // default: to the end
 
-    // Probe channels/size once (OpenCV only reveals them by decoding a frame); rewind afterwards.
-    cv::Mat probe;
-    if (cap_.read(probe)) {
-        setNativeChannels(probe.channels());
-        setNativeSize(probe.cols, probe.rows);
-        cap_.set(cv::CAP_PROP_POS_FRAMES, 0);
-    }
     pos_ = 0;
     return true;
 }

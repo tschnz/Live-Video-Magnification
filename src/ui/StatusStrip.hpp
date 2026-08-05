@@ -25,6 +25,11 @@ public:
     // Silent: does not emit playbackFpsChanged. No-op for a non-positive rate.
     void setPlaybackFps(double fps);
 
+    // Persistent right-aligned note (e.g. a software-decoding fallback warning). Empty text hides
+    // it; it survives the next setStats() until cleared.
+    void showNotice(const QString& text);
+    void clearNotice() { showNotice(QString()); }
+
 signals:
     void playbackFpsChanged(double fps);
 
@@ -49,6 +54,7 @@ private:
     QLabel*         slash_ = nullptr;
 
     QLabel* hint_ = nullptr; // hidden unless the pipeline is strained
+    QLabel* notice_ = nullptr; // persistent fallback/status warning; hidden unless shown
 };
 
 } // namespace livim

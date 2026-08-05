@@ -21,6 +21,11 @@ public:
     bool isOpen() const override { return cap_.isOpened(); }
     void setLoop(bool enabled) override { loop_.store(enabled, std::memory_order_release); }
     double reportedFps() const override { return reportedFps_; }
+    std::string openNotice() const override {
+        return usedSoftwareDecodeFallback_
+                   ? "Software decoding fallback: no hardware decoder for this video."
+                   : std::string();
+    }
 
     // Seeks go through CAP_PROP_POS_FRAMES, which is keyframe-approximate for long-GOP codecs,
     // so scrub/trim positions are best-effort.
@@ -37,8 +42,13 @@ protected:
 private:
     std::int64_t effectiveOut() const; // out-point, or frameCount_ (or "infinite" if unknown)
 
+    // Opens `path` into `cap`. forceSoftware pins the FFmpeg decoder to software-only via the
+    // open-time CAP_PROP_HW_ACCELERATION parameter; falls back to a plain open if unhonoured.
+    static bool openCapture(cv::VideoCapture& cap, const std::string& path, bool forceSoftware);
+
     std::string path_;
     cv::VideoCapture cap_;
+    bool usedSoftwareDecodeFallback_ = false;
     std::uint64_t seq_ = 0;
     double reportedFps_ = 0.0;
     double frameIntervalUs_ = 0.0; // for the synthesized ptsUs

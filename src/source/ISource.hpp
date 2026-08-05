@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <string>
 
 #include <opencv2/core/types.hpp>
 
@@ -22,6 +23,10 @@ public:
 
     virtual bool open() = 0;
     virtual bool isOpen() const = 0;
+
+    // Optional human-readable note from the most recent successful open() (e.g. a decoding
+    // fallback); empty when the source opened normally.
+    virtual std::string openNotice() const { return {}; }
 
     // Spawns the grab thread; it starts paused (call play() to begin producing).
     virtual void start() = 0;

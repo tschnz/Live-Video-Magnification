@@ -43,6 +43,7 @@ bool PlaybackController::openFile(const std::string& path) {
         state_ = State::Idle;
         return false;
     }
+    openNotice_ = source_->openNotice();
     state_ = State::Stopped; // loaded and paused at the start; play() begins playback
     return true;
 }
@@ -60,8 +61,14 @@ bool PlaybackController::openCamera(int deviceIndex) {
         state_ = State::Idle;
         return false;
     }
+    openNotice_.clear();
     state_ = State::Stopped;
     return true;
+}
+
+std::string PlaybackController::lastOpenNotice() {
+    std::lock_guard<std::mutex> lg(mu_);
+    return openNotice_;
 }
 
 bool PlaybackController::buildAndStart() {

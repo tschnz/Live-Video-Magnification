@@ -22,12 +22,17 @@ public:
     void     close() override;
 
 private:
+    // Reopens with the decoder pinned to software-only (CAP_PROP_HW_ACCELERATION is open-time
+    // only); falls back to a plain open on builds that ignore the parameter.
+    bool openCaptureSoftware();
+
     std::string      path_;
     int              startFrame_;
     int              endFrame_;   // exclusive; -1 = to end
     cv::VideoCapture cap_;
     int              frameCount_ = -1; // frames that will be delivered (trimmed)
     int              delivered_ = 0;
+    bool             softwareFallbackTried_ = false;
     cv::Size         size_{0, 0};
 };
 

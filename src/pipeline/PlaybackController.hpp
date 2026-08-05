@@ -34,6 +34,10 @@ public:
     bool openFile(const std::string& path);
     bool openCamera(int deviceIndex);
 
+    // Human-readable note from the most recent successful open (e.g. a software-decoding
+    // fallback); empty when the source opened normally. Safe to call any time.
+    std::string lastOpenNotice();
+
     void play();
     void pause();
     void stop();
@@ -152,6 +156,8 @@ private:
     bool magnifyActive_ = true; // false (original-only view) -> bypass magnification
     double playbackFps_ = 0.0;  // 0 = follow the source's reported FPS
     double reportedFps_ = 0.0;
+
+    std::string openNotice_; // from the most recent successful openFile()
 
     std::shared_ptr<RecordingBuffer> recordBuf_; // non-null only while camera recording
     std::mutex mu_;
