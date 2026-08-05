@@ -1,34 +1,51 @@
 #!/usr/bin/env bash
-# Linux build bootstrap for LiViM: installs system build deps (apt/dnf/pacman) and sets up vcpkg.
-# Idempotent — safe to re-run.
+# Linux build bootstrap for LiViM.
+#
+# vcpkg is the default and is mandatory for release/CI builds. Use --system only for local builds
+# that use distro Qt6/OpenCV/FFmpeg. Dependency selection is represented by the CMake preset; CMake
+# performs the actual find_package validation.
+# Idempotent -- safe to re-run.
 #
 # Usage:
-#   scripts/setup-linux.sh [--configure] [--compiler gcc|clang] [--no-install]
-#     --configure         run `cmake --preset <compiler>` at the end
-#     --compiler gcc|clang compiler preset to configure with (default: gcc)
-#     --no-install        skip system-package install
+#   scripts/setup-linux.sh [--configure] [--compiler gcc|clang] [--no-install] [--system|--vcpkg]
+#     --configure         run cmake configure at the end
+#     --compiler gcc|clang compiler preset family to use (default: gcc)
+#     --no-install        skip distro package installation
+#     --system            use distro Qt6/OpenCV/FFmpeg (opt-in)
+#     --vcpkg             use vcpkg (default)
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DO_INSTALL=1
 DO_CONFIGURE=0
 COMPILER=gcc
+FORCE_SYSTEM=0
+FORCE_VCPKG=0
 
 while [ $# -gt 0 ]; do
     case "$1" in
         --configure)   DO_CONFIGURE=1 ;;
         --no-install)  DO_INSTALL=0 ;;
         --compiler)    COMPILER="${2:?--compiler needs gcc|clang}"; shift ;;
-        -h|--help)     sed -n '2,9p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        --system)      FORCE_SYSTEM=1 ;;
+        --vcpkg)       FORCE_VCPKG=1 ;;
+        -h|--help)
+            sed -n '2,15p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+            exit 0 ;;
         *)             echo "unknown arg: $1" >&2; exit 2 ;;
     esac
     shift
 done
+
 [ "$COMPILER" = gcc ] || [ "$COMPILER" = clang ] || { echo "--compiler must be gcc or clang" >&2; exit 2; }
+[ "$FORCE_SYSTEM" = 1 ] && [ "$FORCE_VCPKG" = 1 ] && { echo "--system and --vcpkg are mutually exclusive" >&2; exit 2; }
+
+# vcpkg is the default; --system selects the distro Qt6/OpenCV/FFmpeg.
+USE_SYSTEM=$FORCE_SYSTEM
 
 APT_PKGS=(
     build-essential ninja-build cmake pkg-config nasm git curl zip unzip tar
-    autoconf autoconf-archive automake libtool
+    autoconf autoconf-archive automake libtool patchelf
     libgl1-mesa-dev libglu1-mesa-dev libegl1-mesa-dev
     libx11-dev libx11-xcb-dev libxext-dev libxfixes-dev libxi-dev libxrender-dev
     libxcb1-dev libxcb-cursor-dev libxcb-glx0-dev libxcb-keysyms1-dev libxcb-image0-dev libxcb-shm0-dev
@@ -39,7 +56,7 @@ APT_PKGS=(
 )
 DNF_PKGS=(
     gcc-c++ clang ninja-build cmake pkgconf-pkg-config nasm make git curl zip unzip tar
-    autoconf autoconf-archive automake libtool
+    autoconf autoconf-archive automake libtool patchelf
     mesa-libGL-devel mesa-libGLU-devel mesa-libEGL-devel
     libX11-devel libXext-devel libXfixes-devel libXi-devel libXrender-devel
     libxcb-devel xcb-util-devel xcb-util-image-devel xcb-util-keysyms-devel xcb-util-wm-devel
@@ -49,7 +66,7 @@ DNF_PKGS=(
 )
 PACMAN_PKGS=(
     base-devel clang cmake ninja nasm git curl zip unzip tar
-    autoconf autoconf-archive automake libtool
+    autoconf autoconf-archive automake libtool patchelf
     mesa glu libglvnd
     libx11 libxext libxfixes libxi libxrender
     libxcb xcb-util xcb-util-image xcb-util-keysyms xcb-util-wm xcb-util-renderutil xcb-util-cursor
@@ -57,23 +74,58 @@ PACMAN_PKGS=(
     wayland wayland-protocols
 )
 
+# Qt6/OpenCV/FFmpeg from the distro, installed only for --system; skipped for the default vcpkg
+# build, where vcpkg builds them from source.
+APT_SYSTEM_PKGS=(qt6-base-dev qt6-wayland-dev libopencv-dev ffmpeg)
+DNF_SYSTEM_PKGS=(qt6-qtbase-devel qt6-qtwayland-devel opencv-devel ffmpeg-devel)
+PACMAN_SYSTEM_PKGS=(qt6-base qt6-wayland opencv ffmpeg)
+
 detect_pm() {
     if command -v apt-get >/dev/null 2>&1; then echo apt
-    elif command -v dnf  >/dev/null 2>&1; then echo dnf
+    elif command -v dnf >/dev/null 2>&1; then echo dnf
     elif command -v pacman >/dev/null 2>&1; then echo pacman
     else echo unknown; fi
 }
 
 install_system_deps() {
     local pm; pm="$(detect_pm)"
-    local SUDO=""; [ "$(id -u)" -eq 0 ] || SUDO="sudo"
-    echo "== installing system dependencies via: $pm =="
+    local sudo_cmd=(); [ "$(id -u)" -eq 0 ] || sudo_cmd=(sudo)
+    echo "== installing Linux build dependencies via: $pm =="
     case "$pm" in
-        apt)    $SUDO apt-get update && $SUDO apt-get install -y "${APT_PKGS[@]}" ;;
-        dnf)    $SUDO dnf install -y "${DNF_PKGS[@]}" ;;
-        pacman) $SUDO pacman -S --needed --noconfirm "${PACMAN_PKGS[@]}" ;;
-        *)      echo "!! Unsupported package manager. Install the equivalents of the apt list in" \
-                     "README.md manually, then re-run with --no-install." >&2; exit 1 ;;
+        apt)
+            "${sudo_cmd[@]}" apt-get update
+            "${sudo_cmd[@]}" apt-get install -y "${APT_PKGS[@]}"
+            if [ "$USE_SYSTEM" = 1 ]; then
+                "${sudo_cmd[@]}" apt-get install -y "${APT_SYSTEM_PKGS[@]}"
+            fi
+            ;;
+        dnf)
+            "${sudo_cmd[@]}" dnf install -y "${DNF_PKGS[@]}"
+            if [ "$USE_SYSTEM" = 1 ]; then
+                "${sudo_cmd[@]}" dnf install -y "${DNF_SYSTEM_PKGS[@]}"
+            fi
+            ;;
+        pacman)
+            "${sudo_cmd[@]}" pacman -S --needed --noconfirm "${PACMAN_PKGS[@]}"
+            if [ "$USE_SYSTEM" = 1 ]; then
+                # Ask pacman whether the dependency is already satisfied, rather than checking
+                # for one concrete package name. This accepts opencv-cuda and any other package
+                # that provides opencv, while avoiding the conflict with stock opencv.
+                local sys_pkgs=()
+                for pkg in "${PACMAN_SYSTEM_PKGS[@]}"; do
+                    if [ "$pkg" = "opencv" ] && pacman -T opencv >/dev/null 2>&1; then
+                        echo "== detected an installed package that provides opencv; skipping stock opencv =="
+                        continue
+                    fi
+                    sys_pkgs+=("$pkg")
+                done
+                "${sudo_cmd[@]}" pacman -S --needed --noconfirm "${sys_pkgs[@]}"
+            fi
+            ;;
+        *)
+            echo "!! Unsupported package manager; install the documented Linux dependencies manually." >&2
+            exit 1
+            ;;
     esac
 }
 
@@ -92,21 +144,28 @@ ensure_vcpkg() {
         "$target/bootstrap-vcpkg.sh" -disableMetrics
     fi
     export VCPKG_ROOT="$target"
-    echo
-    echo ">> VCPKG_ROOT is set for this script run. Add it to your shell so future builds find it:"
-    echo "     bash/zsh:  export VCPKG_ROOT=\"$target\""
-    echo "     fish:      set -Ux VCPKG_ROOT \"$target\""
-    echo
+    echo "== VCPKG_ROOT is set for this script run: $target =="
 }
 
 [ "$DO_INSTALL" -eq 1 ] && install_system_deps
-ensure_vcpkg
+
+# vcpkg is the default. The release workflow always uses the vcpkg presets, so runner-installed
+# packages can never change the release dependency source. --system picks the distro Qt6/OpenCV/FFmpeg.
+if [ "$USE_SYSTEM" = 1 ]; then
+    PRESET="${COMPILER}-system"
+else
+    ensure_vcpkg
+    PRESET="$COMPILER"
+fi
 
 if [ "$DO_CONFIGURE" -eq 1 ]; then
-    echo "== configuring (preset: $COMPILER) — first run compiles Qt+OpenCV+ffmpeg from source (~30-90 min) =="
-    cmake --preset "$COMPILER" -S "$REPO_ROOT"
-    echo "== done. build with:  cmake --build --preset ${COMPILER}-release =="
+    cmake --preset "$PRESET" -S "$REPO_ROOT"
+    echo "== done. build with: cmake --build --preset ${PRESET}-release =="
 else
-    echo "== setup complete. Next:"
-    echo "     cmake --preset $COMPILER && cmake --build --preset ${COMPILER}-release"
+    if [ "$USE_SYSTEM" = 1 ]; then
+        echo "== setup complete (system). Next:"
+    else
+        echo "== setup complete (vcpkg). Next:"
+    fi
+    echo "     cmake --preset $PRESET && cmake --build --preset ${PRESET}-release"
 fi
