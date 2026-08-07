@@ -83,9 +83,13 @@ configure compiles them (~30â€“90 min, once). You need a C++20 compiler, CMake â
 and vcpkg with `VCPKG_ROOT` set.
 
 ```bash
-# Linux - setup-linux.sh installs system packages (apt/dnf/pacman) and bootstraps vcpkg
+# Linux - default vcpkg workflow (recommended for reproducible deps)
 scripts/setup-linux.sh --configure
 cmake --build --preset gcc-release && ./build/gcc/RelWithDebInfo/livim
+
+# Linux - alternative system package workflow (uses distro Qt/OpenCV/FFmpeg)
+scripts/setup-linux.sh --configure --system
+cmake --build --preset gcc-system-release && ./build/gcc-system/RelWithDebInfo/livim
 
 # Windows (x64 Native Tools prompt) - needs VS 2022 with the C++ CMake tools
 cmake --preset msvc && cmake --build --preset msvc-release
