@@ -102,6 +102,12 @@ StatusStrip::StatusStrip(QWidget* parent) : QWidget(parent) {
     hint_->setVisible(false);
     row->addWidget(hint_);
 
+    notice_ = new QLabel(this);
+    notice_->setObjectName("statNotice");
+    notice_->setMinimumWidth(0);
+    notice_->setVisible(false);
+    row->addWidget(notice_);
+
     setStats(StatsSnapshot{}, 0.0, false, false);
 }
 
@@ -161,6 +167,11 @@ void StatusStrip::setPlaybackFps(double fps) {
     if (fps <= 0.0) return;
     const QSignalBlocker block(*playbackSpin_);
     playbackSpin_->setValue(fps);
+}
+
+void StatusStrip::showNotice(const QString& text) {
+    if (notice_->text() != text) notice_->setText(text);
+    notice_->setVisible(!text.isEmpty());
 }
 
 } // namespace livim

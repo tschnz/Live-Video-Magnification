@@ -11,16 +11,23 @@
       "hidden": true,
       "generator": "Ninja Multi-Config",
       "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_CONFIGURATION_TYPES": "Debug;RelWithDebInfo;Release"
+      }
+    },
+    {
+      "name": "base-vcpkg",
+      "hidden": true,
+      "inherits": "base",
       "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
       "cacheVariables": {
-        "CMAKE_CONFIGURATION_TYPES": "Debug;RelWithDebInfo;Release",
         "VCPKG_INSTALLED_DIR": "${sourceDir}/build/vcpkg_installed"
       }
     },
     {
       "name": "msvc",
       "displayName": "MSVC",
-      "inherits": "base",
+      "inherits": "base-vcpkg",
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -34,7 +41,7 @@
     {
       "name": "clang-cl",
       "displayName": "Clang (clang-cl)",
-      "inherits": "base",
+      "inherits": "base-vcpkg",
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -48,7 +55,7 @@
     {
       "name": "mingw",
       "displayName": "MinGW",
-      "inherits": "base",
+      "inherits": "base-vcpkg",
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -60,9 +67,35 @@
       }
     },
     {
+      "name": "gcc-system",
+      "displayName": "GCC (system deps)",
+      "inherits": "base-linux-system",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER": "g++"
+      }
+    },
+    {
+      "name": "clang-system",
+      "displayName": "Clang (system deps)",
+      "inherits": "base-linux-system",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER": "clang++"
+      }
+    },
+    {
       "name": "gcc",
-      "displayName": "GCC",
-      "inherits": "base",
+      "displayName": "GCC (vcpkg deps)",
+      "inherits": "base-vcpkg",
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -76,8 +109,8 @@
     },
     {
       "name": "clang",
-      "displayName": "Clang",
-      "inherits": "base",
+      "displayName": "Clang (vcpkg deps)",
+      "inherits": "base-vcpkg",
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -92,7 +125,7 @@
     {
       "name": "appleclang",
       "displayName": "Apple Clang",
-      "inherits": "base",
+      "inherits": "base-vcpkg",
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -100,6 +133,22 @@
       },
       "cacheVariables": {
         "VCPKG_OVERLAY_TRIPLETS": "${sourceDir}/triplets"
+      }
+    },
+    {
+      "name": "base-linux-system",
+      "hidden": true,
+      "displayName": "Linux (system deps)",
+      "inherits": "base",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "cacheVariables": {
+        "CMAKE_PREFIX_PATH": "/usr",
+        "CMAKE_CXX_STANDARD": "20",
+        "LIVIM_USE_SYSTEM_DEPS": "ON"
       }
     }
   ],
@@ -141,6 +190,49 @@
       "configuration": "RelWithDebInfo"
     },
     {
+      "name": "gcc-system-debug",
+      "displayName": "Debug",
+      "configurePreset": "gcc-system",
+      "configuration": "Debug"
+    },
+    {
+      "name": "gcc-system-release",
+      "displayName": "Release",
+      "configurePreset": "gcc-system",
+      "configuration": "RelWithDebInfo"
+    },
+    {
+      "name": "clang-system-debug",
+      "displayName": "Debug",
+      "configurePreset": "clang-system",
+      "configuration": "Debug"
+    },
+    {
+      "name": "clang-system-release",
+      "displayName": "Release",
+      "configurePreset": "clang-system",
+      "configuration": "RelWithDebInfo"
+    },
+    {
+      "name": "appleclang-debug",
+      "displayName": "Debug",
+      "configurePreset": "appleclang",
+      "configuration": "Debug"
+    },
+    {
+      "name": "appleclang-release",
+      "displayName": "Release",
+      "configurePreset": "appleclang",
+      "configuration": "RelWithDebInfo"
+    },
+    {
+      "name": "gcc-system-app",
+      "displayName": "App (ship Release)",
+      "configurePreset": "gcc-system",
+      "configuration": "Release",
+      "targets": [ "livim" ]
+    },
+    {
       "name": "gcc-debug",
       "displayName": "Debug",
       "configurePreset": "gcc",
@@ -162,18 +254,6 @@
       "name": "clang-release",
       "displayName": "Release",
       "configurePreset": "clang",
-      "configuration": "RelWithDebInfo"
-    },
-    {
-      "name": "appleclang-debug",
-      "displayName": "Debug",
-      "configurePreset": "appleclang",
-      "configuration": "Debug"
-    },
-    {
-      "name": "appleclang-release",
-      "displayName": "Release",
-      "configurePreset": "appleclang",
       "configuration": "RelWithDebInfo"
     },
     {
@@ -208,6 +288,14 @@
       "packageDirectory": "${sourceDir}/dist"
     },
     {
+      "name": "linux-system-pkg",
+      "displayName": "Package Linux (.deb + .rpm, system deps)",
+      "configurePreset": "gcc-system",
+      "configurations": [ "Release" ],
+      "generators": [ "DEB", "RPM" ],
+      "packageDirectory": "${sourceDir}/dist"
+    },
+    {
       "name": "windows-pkg",
       "displayName": "Package Windows (setup.exe + portable .zip)",
       "configurePreset": "msvc",
@@ -227,11 +315,20 @@
   "workflowPresets": [
     {
       "name": "linux-dist",
-      "displayName": "Ship Linux: configure -> build app -> package",
+      "displayName": "Ship Linux (vcpkg): configure -> build app -> package",
       "steps": [
         { "type": "configure", "name": "gcc" },
         { "type": "build",     "name": "gcc-app" },
         { "type": "package",   "name": "linux-pkg" }
+      ]
+    },
+    {
+      "name": "linux-system-dist",
+      "displayName": "Ship Linux (system deps): configure -> build app -> package",
+      "steps": [
+        { "type": "configure", "name": "gcc-system" },
+        { "type": "build",     "name": "gcc-system-app" },
+        { "type": "package",   "name": "linux-system-pkg" }
       ]
     },
     {

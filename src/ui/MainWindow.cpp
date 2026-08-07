@@ -439,6 +439,7 @@ void MainWindow::onOpenFile() {
                              "Could not open the video file. Is the codec supported by ffmpeg?");
         return;
     }
+    statusStrip_->showNotice(QString::fromStdString(controller_.lastOpenNotice()));
     currentFilePath_ = path;
     sourceKind_ = SourceKind::File;
     sourceOpen_ = true;
@@ -461,6 +462,7 @@ void MainWindow::onOpenCamera() {
                              QString("Could not open camera \"%1\".").arg(dlg.selectedDeviceName()));
         return;
     }
+    statusStrip_->clearNotice();
     currentFilePath_.clear();
     sourceKind_ = SourceKind::Camera;
     sourceOpen_ = true;

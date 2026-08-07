@@ -19,6 +19,9 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+option(LIVIM_USE_SYSTEM_DEPS
+    "Build against system Qt6/OpenCV/FFmpeg instead of vcpkg (explicit local opt-in)" OFF)
+
 find_package(OpenCV CONFIG REQUIRED COMPONENTS core imgproc videoio)
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets OpenGL OpenGLWidgets)
 if (UNIX AND NOT APPLE)
@@ -26,6 +29,36 @@ if (UNIX AND NOT APPLE)
 endif()
 
 qt_standard_project_setup()
+
+# ---------------------------------------------------------------------------
+# Dependency provenance: Qt6/OpenCV/FFmpeg come from vcpkg (the vcpkg toolchain
+# file was injected) or from the system distro (no vcpkg toolchain). This drives
+# the packaging/install logic below so a system-deps build still yields a
+# self-contained /opt bundle. System dependencies are explicit local opt-in;
+# release/CI builds are required to use the vcpkg presets.
+# ---------------------------------------------------------------------------
+if (LIVIM_USE_SYSTEM_DEPS)
+    set(LIVIM_DEPS_SOURCE "system")
+elseif (DEFINED VCPKG_INSTALLED_DIR AND DEFINED VCPKG_TARGET_TRIPLET)
+    set(LIVIM_DEPS_SOURCE "vcpkg")
+else()
+    message(FATAL_ERROR
+        "No vcpkg toolchain is active. Use the explicit system-deps preset with "
+        "-DLIVIM_USE_SYSTEM_DEPS=ON, or configure with a vcpkg preset.")
+endif()
+
+if (DEFINED ENV{GITHUB_ACTIONS} AND LIVIM_DEPS_SOURCE STREQUAL "system")
+    message(FATAL_ERROR
+        "GitHub Actions builds must use vcpkg dependencies. Use the vcpkg release preset.")
+endif()
+
+if (LIVIM_DEPS_SOURCE STREQUAL "system" AND UNIX AND NOT APPLE
+        AND Qt6_VERSION VERSION_LESS "6.5")
+    message(FATAL_ERROR
+        "System-deps Linux builds require Qt6 >= 6.5; found Qt ${Qt6_VERSION}.")
+endif()
+
+message(STATUS "LiViM: dependency source = ${LIVIM_DEPS_SOURCE}")
 
 # Strict warnings for our own code only; dependency headers arrive via -isystem.
 add_library(livim_warnings INTERFACE)
@@ -210,12 +243,19 @@ endif()
 # --- Install & packaging (CPack) -----------------------------------------------------------------
 include(GNUInstallDirs)
 
-# Bake the final RPATH at build time so the install step performs no RPATH rewrite. Keeps the vcpkg
-# lib dir (build-tree runs) plus $ORIGIN/../lib (installed layout); Debug links vcpkg's debug libs.
+# Bake the final RPATH at build time so the install step performs no RPATH rewrite.
+# vcpkg: keeps the vcpkg lib dir (build-tree runs) plus $ORIGIN/../lib (installed layout); Debug links vcpkg's debug libs.
+# system: just $ORIGIN/../lib so the /opt bundle is self-contained.
 if (UNIX AND NOT APPLE)
-    set_target_properties(livim PROPERTIES
-        BUILD_WITH_INSTALL_RPATH TRUE
-        INSTALL_RPATH "$<$<CONFIG:Debug>:${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/debug/lib;>${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib;$ORIGIN/../lib")
+    if (LIVIM_DEPS_SOURCE STREQUAL "vcpkg")
+        set_target_properties(livim PROPERTIES
+            BUILD_WITH_INSTALL_RPATH TRUE
+            INSTALL_RPATH "$<$<CONFIG:Debug>:${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/debug/lib;>${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib;$ORIGIN/../lib")
+    else()
+        set_target_properties(livim PROPERTIES
+            BUILD_WITH_INSTALL_RPATH TRUE
+            INSTALL_RPATH "$ORIGIN/../lib")
+    endif()
 endif()
 
 if (WIN32)
@@ -228,29 +268,67 @@ endif()
 
 # macOS (macdeployqt) and Linux (Qt deploy runtime) bundle the full runtime closure. Windows'
 # windeployqt is Qt-only and would miss the OpenCV/ffmpeg/vcpkg DLLs, so Windows deploys manually below.
+# macOS always uses Qt's deploy helper; so does the vcpkg path. The Linux *system* path skips it:
+# Qt's helper aborts on distro Qt6 plugins that ship without a RUNPATH (e.g. libQt6Xdg*.so, common on
+# Arch/Manjaro), so the manual install(CODE) block below owns the full closure there instead.
 if (NOT WIN32)
-    qt_generate_deploy_app_script(
-        TARGET livim
-        OUTPUT_SCRIPT _livim_deploy_script
-        NO_TRANSLATIONS
-        NO_UNSUPPORTED_PLATFORM_ERROR)
-    install(SCRIPT ${_livim_deploy_script})
+    if (APPLE OR LIVIM_DEPS_SOURCE STREQUAL "vcpkg")
+        qt_generate_deploy_app_script(
+            TARGET livim
+            OUTPUT_SCRIPT _livim_deploy_script
+            NO_TRANSLATIONS
+            NO_UNSUPPORTED_PLATFORM_ERROR)
+        install(SCRIPT ${_livim_deploy_script})
+    endif()
 endif()
 
 # Qt's Linux deploy bundles only the default xcb plugin; inject the native-Wayland set + the portal
 # file-dialog theme, bundle their extra Qt libs, and rewrite RPATHs so the tree stays relocatable.
 if (UNIX AND NOT APPLE)
     find_program(PATCHELF_EXECUTABLE patchelf REQUIRED)
-    set(_livim_qt_plugin_src "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/Qt6/plugins")
-    set(_livim_vcpkg_lib     "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib")
+    if (LIVIM_DEPS_SOURCE STREQUAL "vcpkg")
+        set(_livim_qt_plugin_src "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/Qt6/plugins")
+        set(_livim_dep_dirs      "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib")
+        set(_livim_dep_excludes  "^/(usr|lib|lib64)/" "ld-linux")
+        # qt_generate_deploy_app_script (above) already bundles the default xcb plugin + the exe
+        # closure for the vcpkg path, so only the native-Wayland set is added here.
+        set(_livim_plugin_wl
+            "platforms/libqwayland.so"
+            "wayland-shell-integration/libxdg-shell.so"
+            "wayland-graphics-integration-client/libqt-plugin-wayland-egl.so"
+            "wayland-decoration-client/libbradient.so"
+            "platformthemes/libqxdgdesktopportal.so")
+        set(_livim_exe_walk "")   # qt_generate owns the executable closure on this path
+    else()
+        # System Qt: derive the plugins dir from an imported plugin target (distro-agnostic),
+        # falling back to qmake's QT_INSTALL_PLUGINS. Resolve the runtime closure from the
+        # platform default library search paths (no vcpkg lib dir to hint).
+        if (TARGET Qt6::QXcbIntegrationPlugin)
+            get_target_property(_livim_plugin_loc Qt6::QXcbIntegrationPlugin IMPORTED_LOCATION)
+            get_filename_component(_d "${_livim_plugin_loc}" DIRECTORY)      # .../platforms
+            get_filename_component(_livim_qt_plugin_src "${_d}" DIRECTORY)   # .../plugins
+        else()
+            execute_process(COMMAND qmake6 -query QT_INSTALL_PLUGINS
+                OUTPUT_VARIABLE _livim_qt_plugin_src OUTPUT_STRIP_TRAILING_WHITESPACE)
+        endif()
+        set(_livim_dep_dirs     "")      # use platform default search paths
+        set(_livim_dep_excludes "ld-linux")
+        # Without qt_generate, the manual block owns the full closure: bundle the default xcb
+        # plugin (Qt's helper would have taken it) together with the Wayland set, and walk the
+        # executable itself so Qt6/OpenCV/FFmpeg get copied + rpathed into /opt.
+        set(_livim_plugin_wl
+            "platforms/libqxcb.so"
+            "platforms/libqwayland.so"
+            "wayland-shell-integration/libxdg-shell.so"
+            "wayland-graphics-integration-client/libqt-plugin-wayland-egl.so"
+            "wayland-decoration-client/libbradient.so"
+            "platformthemes/libqxdgdesktopportal.so")
+        set(_livim_exe_walk "EXECUTABLES \"\${_real}/bin/livim\"")
+    endif()
     install(CODE "
         set(_pfx  \"\${CMAKE_INSTALL_PREFIX}\")
         set(_real \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}\")
-        set(_wl platforms/libqwayland.so
-                wayland-shell-integration/libxdg-shell.so
-                wayland-graphics-integration-client/libqt-plugin-wayland-egl.so
-                wayland-decoration-client/libbradient.so
-                platformthemes/libqxdgdesktopportal.so)
+        set(_wl ${_livim_plugin_wl})
         set(_plugfiles)
         foreach(p IN LISTS _wl)
             get_filename_component(_sub \"\${p}\" DIRECTORY)
@@ -261,10 +339,11 @@ if (UNIX AND NOT APPLE)
             list(APPEND _plugfiles \"\${_real}/Qt6/plugins/\${_sub}/\${_fn}\")
         endforeach()
         file(GET_RUNTIME_DEPENDENCIES
+            ${_livim_exe_walk}
             LIBRARIES \${_plugfiles}
             RESOLVED_DEPENDENCIES_VAR _res UNRESOLVED_DEPENDENCIES_VAR _unres
-            DIRECTORIES \"${_livim_vcpkg_lib}\"
-            POST_EXCLUDE_REGEXES \"^/(usr|lib|lib64)/\" \"ld-linux\")
+            DIRECTORIES ${_livim_dep_dirs}
+            POST_EXCLUDE_REGEXES ${_livim_dep_excludes})
         foreach(_dep IN LISTS _res)
             get_filename_component(_dn \"\${_dep}\" NAME)
             if(NOT EXISTS \"\${_real}/lib/\${_dn}\")

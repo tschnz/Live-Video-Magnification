@@ -83,7 +83,8 @@ jobs:
 
       - name: Install Linux build deps
         if: runner.os == 'Linux'
-        run: ./scripts/setup-linux.sh          # canonical apt list
+        # --vcpkg is mandatory: release builds must never link the distro's Qt6/OpenCV/FFmpeg.
+        run: ./scripts/setup-linux.sh --vcpkg  # canonical apt list + vcpkg-only
 
       - name: Install rpmbuild (Linux)
         if: runner.os == 'Linux'

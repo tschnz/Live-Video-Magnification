@@ -202,6 +202,7 @@ QLabel#statValue[state="warn"] { color: @accent; }
 QLabel#statValue[state="bad"]  { color: @danger; }
 QLabel#statValue[state="idle"] { color: @faint; }
 QLabel#statHint { color: @danger; padding-left: 2px; }
+QLabel#statNotice { color: @accent; padding-left: 8px; }
 /* The Playback FPS input embedded in the strip: shared field style, slimmer padding. */
 QDoubleSpinBox#statSpin { padding: 1px 6px; }
 QLabel#statSlash        { color: @dim; }

@@ -1,26 +1,10 @@
 #include "processing/magnification/RieszPyramid.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 
 namespace livim {
-
-void arcCos(const cv::Mat& X, cv::Mat& result) {
-    assert(X.isContinuous() && result.isContinuous());
-    const float* const pX = X.ptr<float>(0);
-    float* const pResult = result.ptr<float>(0);
-    const int count = X.rows * X.cols;
-
-    for (int i = 0; i < count; ++i) {
-        if (pX[i] < -1.0) {
-            pResult[i] = -1.0;
-        } else if (pX[i] > 1.0) {
-            pResult[i] = 1.0;
-        } else {
-            pResult[i] = acosf(pX[i]);
-        }
-    }
-}
 
 void cosSin(const cv::Mat& X, CompExpMat& result) {
     assert(X.isContinuous());
@@ -85,25 +69,45 @@ void RieszPyramidLevel::computePhaseDifferenceAndAmplitude(const RieszPyramidLev
 
     CompExpMat qConjProd = (prior.itsRiesz * (itsLowpass * (-1.f))) + (itsRiesz * prior.itsLowpass);
 
-    // Quaternion logarithm.
     cv::Mat qConjProdXYsquared = square(qConjProd);
     cv::Mat qConjProdAmplitude;
     cv::sqrt(qConjProdReal.mul(qConjProdReal) + qConjProdXYsquared, qConjProdAmplitude);
 
-    cv::Mat phaseDifference_tmp;
-    cv::divide(qConjProdReal, qConjProdAmplitude, phaseDifference_tmp);
+    // Quaternion logarithm. atan2(|v|, qReal) is algebraically identical to
+    // acos(qReal/|q|), but numerically stable where acos has an infinite
+    // derivative: near-zero phase differences and low-amplitude coefficients
+    // otherwise get their noise amplified into spurious phase shifts.
+    cv::Mat vectorMagnitude;
+    cv::sqrt(qConjProdXYsquared, vectorMagnitude);
 
-    cv::Mat phaseDifference = cv::Mat(phaseDifference_tmp.size(), phaseDifference_tmp.type());
-    arcCos(phaseDifference_tmp, phaseDifference);
+    cv::Mat phaseDifference(vectorMagnitude.size(), CV_32FC1);
+    const float* const pReal = qConjProdReal.ptr<float>();
+    const float* const pVector = vectorMagnitude.ptr<float>();
+    float* const pPhase = phaseDifference.ptr<float>();
+    const int count = phaseDifference.rows * phaseDifference.cols;
+    for (int i = 0; i < count; ++i) {
+        pPhase[i] = std::atan2(pVector[i], pReal[i]);
+    }
 
-    cv::Mat qConjProdXYsquaredSqrt;
-    cv::sqrt(qConjProdXYsquared, qConjProdXYsquaredSqrt);
+    // A nearly zero Riesz coefficient carries no meaningful orientation; its
+    // phase is dominated by noise and must not be amplified. Damp the scale
+    // where the signal is weak and mask low-energy pixels out entirely.
+    double maximumAmplitude = 0.0;
+    cv::minMaxLoc(qConjProdAmplitude, nullptr, &maximumAmplitude);
 
-    CompExpMat orientation = qConjProd / qConjProdXYsquaredSqrt;
+    const float productFloor =
+        std::max(1e-12f, static_cast<float>(maximumAmplitude) * 1e-6f);
 
-    itsPhaseDiff = orientation * phaseDifference;
-    cv::patchNaNs(cos(itsPhaseDiff), 0.0);
-    cv::patchNaNs(sin(itsPhaseDiff), 0.0);
+    cv::Mat valid = qConjProdAmplitude > productFloor;
+
+    cv::Mat scale = cv::Mat::zeros(vectorMagnitude.size(), CV_32FC1);
+    cv::divide(phaseDifference, vectorMagnitude + 1e-12f, scale);
+
+    cos(itsPhaseDiff) = cos(qConjProd).mul(scale);
+    sin(itsPhaseDiff) = sin(qConjProd).mul(scale);
+
+    cos(itsPhaseDiff).setTo(0.0f, ~valid);
+    sin(itsPhaseDiff).setTo(0.0f, ~valid);
 
     cv::sqrt(qConjProdAmplitude, itsAmplitude);
 
@@ -122,25 +126,45 @@ void RieszPyramidLevel::normalize(CompExpMat& result) {
                     cv::BORDER_REFLECT_101);
     cv::sepFilter2D(sin(result), sin(result), -1, kernel, kernel, cv::Point(-1, -1), 0,
                     cv::BORDER_REFLECT_101);
-    cv::divide(cos(result), itsAmplitudeBlurred, cos(result));
-    cv::divide(sin(result), itsAmplitudeBlurred, sin(result));
+
+    // Numerical guard and confidence regularizer: dividing by a blurred
+    // amplitude that approaches zero would turn sensor noise into spurious
+    // large phase shifts. Adding a floor attenuates phase where there is
+    // insufficient signal instead of amplifying random low-amplitude phase.
+    double maximumAmplitude = 0.0;
+    cv::minMaxLoc(itsAmplitudeBlurred, nullptr, &maximumAmplitude);
+
+    const float amplitudeFloor =
+        std::max(1e-6f, static_cast<float>(maximumAmplitude) * 1e-3f);
+
+    const cv::Mat denominator = itsAmplitudeBlurred + amplitudeFloor;
+
+    cv::divide(cos(result), denominator, cos(result));
+    cv::divide(sin(result), denominator, sin(result));
 }
 
 void RieszPyramidLevel::amplify(double alpha, double threshold) {
-    CompExpMat temp;
-    normalize(temp);
+    CompExpMat filteredPhase;
+    normalize(filteredPhase);
 
-    cv::Mat MagV = square(temp);
-    cv::sqrt(MagV, MagV);
-    cv::Mat MagV2 = MagV * alpha;
-    cv::threshold(MagV2, MagV2, threshold, 0, cv::THRESH_TRUNC);
-    CompExpMat phaseDiff;
-    cosSin(MagV2, phaseDiff);
-    cv::Mat pair = real(itsRiesz).mul(cos(temp)) + imag(itsRiesz).mul(sin(temp));
-    cv::divide(pair, MagV, pair);
-    cv::patchNaNs(pair, 0.0);
+    cv::Mat phaseMagnitude;
+    cv::sqrt(square(filteredPhase), phaseMagnitude);
 
-    itsLowpass = itsLowpass.mul(cos(phaseDiff)) - pair.mul(sin(phaseDiff));
+    cv::Mat amplifiedMagnitude = phaseMagnitude * alpha;
+    cv::threshold(amplifiedMagnitude, amplifiedMagnitude, threshold, 0, cv::THRESH_TRUNC);
+
+    CompExpMat exponential;
+    cosSin(amplifiedMagnitude, exponential);
+
+    // sin(magnitude) / magnitude, with a floor so a zero phase magnitude yields
+    // zero instead of the 0/0 that used to become a NaN.
+    cv::Mat sincFactor;
+    cv::divide(sin(exponential), phaseMagnitude + 1e-6f, sincFactor);
+
+    const cv::Mat projectedRiesz =
+        real(itsRiesz).mul(cos(filteredPhase)) + imag(itsRiesz).mul(sin(filteredPhase));
+
+    itsLowpass = itsLowpass.mul(cos(exponential)) - projectedRiesz.mul(sincFactor);
 }
 
 RieszPyramid::RieszPyramid() {

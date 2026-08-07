@@ -269,11 +269,16 @@ inline bool magnifyRiesz(const cv::Mat& in8u, const MagnificationParams& p, int 
     st.cur->amplify(p.amplification, p.coWavelength * PI_PERCENT);
     cv::Mat magnified = st.cur->collapsePyramid();
 
+    // OpenCV's floating-point Lab L range is [0,100]; one bad coefficient
+    // otherwise saturates a pixel to white after Lab2BGR.
+    cv::max(magnified, 0.0, magnified);
+    cv::min(magnified, 100.0, magnified);
+
     cv::Mat output;
     magnified.convertTo(labChannels[0], CV_32FC1);
     cv::merge(labChannels, output);
     cv::cvtColor(output, output, cv::COLOR_Lab2BGR);
-    output.convertTo(out8u, CV_8UC3, 255.0, 1.0 / 255.0);
+    output.convertTo(out8u, CV_8UC3, 255.0, 0.0);
     outFmt = PixelFormat::BGR8;
     return true;
 }
